@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+}
+
+group = 'me.jeremiah'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+
+    // me.jeremiah.minecraft repositories
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+    // me.jeremiah.minecraft.hooks repositories
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+}
+
+dependencies {
+    implementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
+
+    implementation 'org.jetbrains:annotations:26.0.1'
+    annotationProcessor 'org.jetbrains:annotations:26.0.1'
+
+    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+
+    // me.jeremiah.minecraft.hooks dependencies
+    compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    // me.jeremiah.data.storage.databases dependencies
+    compileOnly 'com.zaxxer:HikariCP:6.2.1'
+    compileOnly 'org.xerial:sqlite-jdbc:3.47.2.0'
+    compileOnly 'com.h2database:h2:2.3.232'
+    compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
+    compileOnly 'org.postgresql:postgresql:42.7.4'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.3.0-beta0'
+    compileOnly 'redis.clients:jedis:5.3.0-beta1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
+
+    testImplementation 'org.jetbrains:annotations:26.0.1'
+    testAnnotationProcessor 'org.jetbrains:annotations:26.0.1'
+
+    testRuntimeOnly 'com.zaxxer:HikariCP:6.2.1'
+    testRuntimeOnly 'org.xerial:sqlite-jdbc:3.47.2.0'
+    testRuntimeOnly 'com.h2database:h2:2.3.232'
+    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
+    testRuntimeOnly 'org.postgresql:postgresql:42.7.4'
+    testRuntimeOnly 'org.mongodb:mongodb-driver-sync:5.3.0-beta0'
+    testRuntimeOnly 'redis.clients:jedis:5.3.0-beta1'
+}
+
+test {
+    useJUnitPlatform()
+}
