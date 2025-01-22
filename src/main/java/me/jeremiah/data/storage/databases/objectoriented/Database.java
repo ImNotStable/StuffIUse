@@ -1,15 +1,17 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.objectoriented;
 
 import me.jeremiah.data.ByteTranslatable;
-import me.jeremiah.data.DatabaseInfo;
-import me.jeremiah.data.Dirtyable;
+import me.jeremiah.data.storage.DatabaseInfo;
+import me.jeremiah.data.storage.Dirtyable;
 import me.jeremiah.data.storage.ReflectionUtils;
 import me.jeremiah.data.storage.SortedDatabase;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
+import java.io.Serializable;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -22,16 +24,13 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class Database<T> implements Closeable {
+public abstract class Database<T extends Serializable> implements Closeable {
 
   private final ScheduledExecutorService scheduler;
 
   private final DatabaseInfo info;
   private final boolean useDirtyable;
   private ScheduledFuture<?> autoSaveTask;
-
-  private final Method serialize;
-  private final Method deserialize;
 
   protected Set<T> entries;
 
@@ -47,8 +46,6 @@ public abstract class Database<T> implements Closeable {
     this.scheduler = Executors.newSingleThreadScheduledExecutor();
     this.info = info;
     this.useDirtyable = Dirtyable.class.isAssignableFrom(entryClass);
-    this.serialize = ReflectionUtils.getSerializeMethod(entryClass);
-    this.deserialize = ReflectionUtils.getDeserializeMethod(entryClass);
     this.idField = ReflectionUtils.getIdField(entryClass);
     this.indexes = ReflectionUtils.getIndexes(entryClass);
     this.sortedDatabase = new SortedDatabase<>(scheduler, entryClass);
@@ -128,27 +125,26 @@ public abstract class Database<T> implements Closeable {
     return sortedDatabase.getSorted(sorted, index);
   }
 
-  protected abstract Map<ByteTranslatable, byte[]> getData();
+  protected abstract Collection<ByteTranslatable> getData();
 
-  @SuppressWarnings("unchecked")
   private void loadData() {
-    Map<ByteTranslatable, byte[]> data = getData();
-    for (Map.Entry<ByteTranslatable, byte[]> rawEntry : data.entrySet())
-      add((T) ReflectionUtils.deserialize(deserialize, rawEntry));
+    Collection<ByteTranslatable> data = getData();
+    for (ByteTranslatable bytes : data)
+      add(bytes.asSerializable());
   }
 
-  protected abstract void saveData(Map<ByteTranslatable, byte[]> data);
+  protected abstract void saveData(Collection<ByteTranslatable> data);
 
   private void save() {
-    Map<ByteTranslatable, byte[]> data = new ConcurrentHashMap<>(entryById.size());
+    Collection<ByteTranslatable> data = new HashSet<>(entryById.size());
     if (useDirtyable)
       for (Map.Entry<ByteTranslatable, T> entry : entryById.entrySet()) {
         if (((Dirtyable) entry.getValue()).isDirty())
-          data.put(entry.getKey(), ReflectionUtils.serialize(serialize, entry.getValue()));
-        }
+          data.add(ByteTranslatable.fromSerializable(entry.getValue()));
+      }
     else
       for (Map.Entry<ByteTranslatable, T> entry : entryById.entrySet())
-        data.put(entry.getKey(), ReflectionUtils.serialize(serialize, entry.getValue()));
+        data.add(ByteTranslatable.fromSerializable(entry.getValue()));
     saveData(data);
   }
 

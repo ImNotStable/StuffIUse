@@ -7,13 +7,17 @@ import me.jeremiah.data.storage.Indexable;
 import me.jeremiah.data.storage.Serializer;
 import me.jeremiah.data.storage.Sorted;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class TestDatabaseObject {
+public class TestDatabaseObject implements Serializable {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
   private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   @Deserializer
@@ -35,13 +39,13 @@ public class TestDatabaseObject {
   private final UUID id;
 
   @Indexable("name")
-  private String name;
+  private final String name;
   @Sorted("age")
-  private int age;
-  private boolean isCool;
+  private final int age;
+  private final boolean isCool;
 
-  public TestDatabaseObject() {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username", RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+  public TestDatabaseObject(int i) {
+    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
   }
 
   public TestDatabaseObject(UUID id, String name, int age, boolean isCool) {
@@ -53,30 +57,6 @@ public class TestDatabaseObject {
 
   public UUID getId() {
     return id;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  public int getAge() {
-    return age;
-  }
-
-  public void setAge(int age) {
-    this.age = age;
-  }
-
-  public boolean isCool() {
-    return isCool;
-  }
-
-  public void setCool(boolean cool) {
-    isCool = cool;
   }
 
   @Serializer
@@ -101,6 +81,25 @@ public class TestDatabaseObject {
     if (age != entry.age)
       return false;
     return isCool == entry.isCool;
+  }
+
+  @Override
+  public int hashCode() {
+    int result = id.hashCode();
+    result = 31 * result + name.hashCode();
+    result = 31 * result + age;
+    result = 31 * result + (isCool ? 1 : 0);
+    return result;
+  }
+
+  @Override
+  public String toString() {
+    return "TestDatabaseObject{" +
+      "id=" + id +
+      ", name='" + name + '\'' +
+      ", age=" + age +
+      ", isCool=" + isCool +
+      '}';
   }
 
 }

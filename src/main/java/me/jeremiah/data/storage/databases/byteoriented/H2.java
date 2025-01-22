@@ -1,7 +1,7 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.byteoriented;
 
 import com.zaxxer.hikari.HikariConfig;
-import me.jeremiah.data.DatabaseInfo;
+import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.SQLStatementHandler;
 import org.jetbrains.annotations.NotNull;
 

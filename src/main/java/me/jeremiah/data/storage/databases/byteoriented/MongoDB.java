@@ -1,4 +1,4 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.byteoriented;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -11,7 +11,7 @@ import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.UpdateOneModel;
 import com.mongodb.client.model.UpdateOptions;
 import me.jeremiah.data.ByteTranslatable;
-import me.jeremiah.data.DatabaseInfo;
+import me.jeremiah.data.storage.DatabaseInfo;
 import org.bson.Document;
 import org.bson.UuidRepresentation;
 import org.bson.types.Binary;

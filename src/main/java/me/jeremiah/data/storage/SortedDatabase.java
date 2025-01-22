@@ -83,6 +83,7 @@ public final class SortedDatabase<T> implements Closeable {
   public void close() {
     if (!operating)
       return;
+    operating = false;
     autoSortTask.cancel(true);
     sortedEntries.clear();
   }
