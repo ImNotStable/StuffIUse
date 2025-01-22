@@ -6,6 +6,7 @@ group = 'me.jeremiah'
 version = '1.0.0'
 
 repositories {
+    // You know this one...
     mavenCentral()
 
     // me.jeremiah.minecraft repositories

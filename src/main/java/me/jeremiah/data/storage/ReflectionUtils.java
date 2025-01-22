@@ -7,10 +7,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -26,9 +26,15 @@ public final class ReflectionUtils {
   }
 
   public static Method getSerializeMethod(Class<?> serializerClass) {
-    return getAnnotatedObject(Arrays.asList(serializerClass.getDeclaredMethods()), Serializer.class)
-      .map(method -> (Method) method)
-      .orElseThrow(() -> new IllegalArgumentException("Class %s does not have a serialize method".formatted(serializerClass.getName())));
+    List<Method> methods = getAnnotatedObject(Arrays.asList(serializerClass.getDeclaredMethods()), Serializer.class);
+
+    if (!methods.isEmpty()) {
+      if (methods.size() > 1)
+        Logger.getGlobal().log(Level.WARNING, "Multiple methods annotated with @Serializer found in %s.class, using first one.".formatted(serializerClass.getName()));
+      return methods.getFirst();
+    }
+
+    throw new IllegalArgumentException("Failed to find a method annotated with @Serializer within %s.class".formatted(serializerClass.getName()));
   }
 
   public static Object deserialize(Method deserializeMethod, Object object) {
@@ -40,9 +46,15 @@ public final class ReflectionUtils {
   }
 
   public static Method getDeserializeMethod(Class<?> deserializerClass) {
-    return getAnnotatedObject(Arrays.asList(deserializerClass.getDeclaredMethods()), Deserializer.class)
-      .map(method -> (Method) method)
-      .orElseThrow(() -> new IllegalArgumentException("Class %s does not have a deserialize method".formatted(deserializerClass.getName())));
+    List<Method> methods = getAnnotatedObject(Arrays.asList(deserializerClass.getDeclaredMethods()), Deserializer.class);
+
+    if (!methods.isEmpty()) {
+      if (methods.size() > 1)
+        Logger.getGlobal().log(Level.WARNING, "Multiple methods annotated with @Deserializer found in %s.class, using first one.".formatted(deserializerClass.getName()));
+      return methods.getFirst();
+    }
+
+    throw new IllegalArgumentException("Failed to find a method annotated with @Deserializer within %s.class".formatted(deserializerClass.getName()));
   }
 
   public static ByteTranslatable getId(Field field, Object object) {
@@ -54,16 +66,39 @@ public final class ReflectionUtils {
   }
 
   public static Field getIdField(Class<?> serializableClass) {
-    return getAnnotatedObject(Arrays.asList(serializableClass.getDeclaredFields()), ID.class)
-      .map(field -> (Field) field)
-      .orElseThrow(() -> new IllegalArgumentException("Class %s does not have an ID field".formatted(serializableClass.getName())));
+    List<Field> annotatedFields = getAnnotatedObject(Arrays.asList(serializableClass.getDeclaredFields()), ID.class);
+
+    if (!annotatedFields.isEmpty()) {
+      if (annotatedFields.size() > 1)
+        Logger.getGlobal().log(Level.WARNING, "Multiple fields annotated with @ID found in %s.class, using first one.".formatted(serializableClass.getName()));
+      return annotatedFields.getFirst();
+    }
+
+    Field[] finalFields = getFinalFields(serializableClass);
+
+    if (finalFields.length > 0) {
+      if (finalFields.length > 1)
+        Logger.getGlobal().log(Level.WARNING, "Multiple final fields found in %s.class, using first one.".formatted(serializableClass.getName()));
+      return finalFields[0];
+    }
+
+    throw new IllegalArgumentException("Failed to find a usable ID field within %s.class".formatted(serializableClass.getName()));
   }
 
-  private static Optional<? extends AccessibleObject> getAnnotatedObject(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
+  public static Field[] getFinalFields(Class<?> serializableClass) {
+    return Arrays.stream(serializableClass.getDeclaredFields())
+      .filter(field -> Modifier.isFinal(field.getModifiers()))
+      .peek(field -> field.setAccessible(true))
+      .toArray(Field[]::new);
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> List<T> getAnnotatedObject(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
     return objects.stream()
       .filter(field -> field.isAnnotationPresent(annotationClass))
       .peek(field -> field.setAccessible(true))
-      .findFirst();
+      .map(field -> (T) field)
+      .toList();
   }
 
   public static ByteTranslatable getIndex(Field field, Object object) {
@@ -80,6 +115,22 @@ public final class ReflectionUtils {
       .peek(field -> field.setAccessible(true))
       .collect(
         Collectors.toUnmodifiableMap(field -> field.getAnnotation(Indexable.class).value(), field -> field)
+      );
+  }
+
+  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
+    return Arrays.stream(serializableClass.getDeclaredFields())
+      .filter(field -> field.isAnnotationPresent(Sorted.class))
+      .filter(field -> {
+        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
+          Logger.getGlobal().log(Level.SEVERE, "Field %s does not implement comparable".formatted(field));
+          return false;
+        }
+        return true;
+      })
+      .peek(field -> field.setAccessible(true))
+      .collect(
+        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
       );
   }
 
@@ -111,22 +162,6 @@ public final class ReflectionUtils {
     }
 
     throw new IllegalArgumentException("Field type " + type.getName() + " must be primitive or implement Comparable");
-  }
-
-  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
-    return Arrays.stream(serializableClass.getDeclaredFields())
-      .filter(field -> field.isAnnotationPresent(Sorted.class))
-      .filter(field -> {
-        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
-          Logger.getGlobal().log(Level.SEVERE, "Field %s does not implement comparable".formatted(field));
-          return false;
-        }
-        return true;
-      })
-      .peek(field -> field.setAccessible(true))
-      .collect(
-        Collectors.toUnmodifiableMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
-      );
   }
 
   private static int compareAsPrimitive(Class<?> type, Object value1, Object value2) {
