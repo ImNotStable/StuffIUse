@@ -41,13 +41,12 @@ public class IndexedDatabaseComponent<T> implements Closeable {
 
   public void refreshIndexes() {
     // ID is not required as it is assumed to be final
-    for (Map.Entry<String, Field> index : indexes.entrySet()) {
+    indexes.entrySet().parallelStream().forEach(index -> {
       Map<ByteTranslatable, T> newIndex = new ConcurrentHashMap<>(entryById.size());
-      for (T entry : entryById.values()) {
+      for (T entry : entryById.values())
         newIndex.put(ReflectionUtils.getIndex(index.getValue(), entry), entry);
-      }
       indexToEntry.put(index.getKey(), newIndex);
-    }
+    });
   }
 
   public Set<Map.Entry<ByteTranslatable, T>> getEntrySet() {
@@ -55,12 +54,12 @@ public class IndexedDatabaseComponent<T> implements Closeable {
   }
 
   public void add(@NotNull T entry) {
-    entryById.put(ReflectionUtils.getId(idField, entry), entry);
+    ByteTranslatable id = ByteTranslatable.from(ReflectionUtils.getId(idField, entry));
+    entryById.put(id, entry);
     for (Map.Entry<String, Field> index : indexes.entrySet()) {
-      indexToEntry.get(index.getKey()).put(
-        ReflectionUtils.getIndex(index.getValue(), entry),
-        entry
-      );
+      String indexName = index.getKey();
+      ByteTranslatable indexKey = ReflectionUtils.getIndex(index.getValue(), entry);
+      indexToEntry.get(indexName).put(indexKey, entry);
     }
   }
 

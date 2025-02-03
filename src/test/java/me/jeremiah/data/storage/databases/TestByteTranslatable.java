@@ -1,7 +1,7 @@
-package me.jeremiah.databases;
+package me.jeremiah.data.storage.databases;
 
-import me.jeremiah.TestDatabaseObject;
 import me.jeremiah.data.ByteTranslatable;
+import me.jeremiah.data.storage.TestDatabaseObject;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;

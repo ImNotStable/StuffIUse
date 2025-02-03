@@ -1,15 +1,19 @@
-package me.jeremiah.data.storage.databases.objectoriented;
+package me.jeremiah.data.storage.databases.singlearrayobjectoriented;
 
-import me.jeremiah.data.ByteTranslatable;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.Dirtyable;
 import me.jeremiah.data.storage.databases.IndexedDatabaseComponent;
 import me.jeremiah.data.storage.databases.SortedDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,8 +25,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public abstract class Database<T extends Serializable> implements Closeable {
 
@@ -103,27 +105,36 @@ public abstract class Database<T extends Serializable> implements Closeable {
     return sortedDatabaseComponent.getSorted(sorted, index);
   }
 
-  protected abstract Collection<ByteTranslatable> getData();
+  protected abstract byte[] getData();
 
+  @SuppressWarnings("unchecked")
   private void loadData() {
-    getData().parallelStream().forEach(bytes -> add(bytes.asSerializable()));
+    byte[] data = getData();
+    if (data == null || data.length == 0) return;
+
+    try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(data))) {
+      while (true) {
+        T entry = (T) inputStream.readObject();
+        add(entry);
+      }
+    } catch (EOFException ignored) {
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
-  protected abstract void saveData(Collection<ByteTranslatable> data);
+  protected abstract void saveData(byte[] data);
 
   private void save() {
-    Stream<T> stream = entries.parallelStream();
-
-    if (!useDirtyable) {
-      stream = stream
-        .filter(entry -> ((Dirtyable) entry).isDirty())
-        .peek(entry -> ((Dirtyable) entry).markClean());
+    try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+         ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {
+      for (T entry : entries)
+        objectStream.writeObject(entry);
+      objectStream.flush();
+      saveData(byteStream.toByteArray());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
-
-    Collection<ByteTranslatable> data = stream.map(ByteTranslatable::fromSerializable)
-        .collect(Collectors.toUnmodifiableSet());
-
-    saveData(data);
   }
 
   public void close() {

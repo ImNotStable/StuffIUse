@@ -63,14 +63,14 @@ public abstract class AbstractSQLDatabase<T> extends Database<T> {
   }
 
   @Override
-  protected Map<ByteTranslatable, byte[]> getData() {
+  protected Map<ByteTranslatable, ByteTranslatable> getData() {
     try (Connection connection = dataSource.getConnection();
          ResultSet rawEntries = statementHandler.handleLoadEntryStatement(connection)) {
-      Map<ByteTranslatable, byte[]> data = new HashMap<>();
+      Map<ByteTranslatable, ByteTranslatable> data = new HashMap<>();
 
       while (rawEntries.next()) {
         final ByteTranslatable id = ByteTranslatable.fromByteArray(rawEntries.getBytes("entry_id"));
-        final byte[] bytes = rawEntries.getBytes("entry_data");
+        final ByteTranslatable bytes = ByteTranslatable.fromByteArray(rawEntries.getBytes("entry_data"));
         data.put(id, bytes);
       }
 
@@ -81,14 +81,14 @@ public abstract class AbstractSQLDatabase<T> extends Database<T> {
   }
 
   @Override
-  protected void saveData(Map<ByteTranslatable, byte[]> data) {
+  protected void saveData(Map<ByteTranslatable, ByteTranslatable> data) {
     try (Connection connection = dataSource.getConnection()) {
       connection.setAutoCommit(false);
       try (PreparedStatement saveStatement = statementHandler.getSaveEntryStatement(connection)) {
 
-        for (Map.Entry<ByteTranslatable, byte[]> entry : data.entrySet()) {
+        for (Map.Entry<ByteTranslatable, ByteTranslatable> entry : data.entrySet()) {
           saveStatement.setBytes(1, entry.getKey().bytes());
-          saveStatement.setBytes(2, entry.getValue());
+          saveStatement.setBytes(2, entry.getValue().bytes());
           saveStatement.addBatch();
         }
 

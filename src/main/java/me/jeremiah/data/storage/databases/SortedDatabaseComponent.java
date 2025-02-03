@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,25 +39,26 @@ public final class SortedDatabaseComponent<T> implements Closeable {
       return;
     sortedEntries = new ConcurrentHashMap<>(sortedFields.size() + 1, 1);
     for (String field : sortedFields.keySet())
-      sortedEntries.put(field, new ArrayList<>(doubledEntryCount));
+      sortedEntries.put(field, Collections.synchronizedList(new ArrayList<>(doubledEntryCount)));
     autoSortTask = scheduler.scheduleAtFixedRate(this::sort, 5, 5, TimeUnit.MINUTES);
   }
 
   public void sort() {
     if (!operating)
       return;
-    for (Map.Entry<String, List<T>> sortedEntries : sortedEntries.entrySet()) {
-      sortedEntries.getValue().sort((entry1, entry2) ->
-        ReflectionUtils.compareSortedFields(sortedFields.get(sortedEntries.getKey()), entry1, entry2)
-      );
-    }
+    sortedEntries.entrySet().parallelStream().forEach(sortedEntries -> {
+        Field field = sortedFields.get(sortedEntries.getKey());
+        sortedEntries.getValue().sort((entry1, entry2) ->
+          ReflectionUtils.compareSortedFields(field, entry1, entry2)
+        );
+      }
+    );
   }
 
   public void add(@NotNull T entry) {
     if (!operating)
       return;
-    for (Map.Entry<String, Field> sortedField : sortedFields.entrySet())
-      sortedEntries.get(sortedField.getKey()).add(entry);
+    sortedFields.keySet().forEach(sortedKey -> sortedEntries.get(sortedKey).add(entry));
   }
 
   public <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<T, R> function) {

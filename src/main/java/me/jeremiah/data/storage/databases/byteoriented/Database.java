@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -18,10 +17,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public abstract class Database<T> implements Closeable {
 
@@ -92,7 +94,7 @@ public abstract class Database<T> implements Closeable {
   }
 
   public final Set<T> getEntries() {
-    return Set.copyOf(entries);
+    return entries;
   }
 
   public final Optional<T> getById(@NotNull Object rawId) {
@@ -107,27 +109,26 @@ public abstract class Database<T> implements Closeable {
     return sortedDatabaseComponent.getSorted(sorted, index);
   }
 
-  protected abstract Map<ByteTranslatable, byte[]> getData();
+  protected abstract Map<ByteTranslatable, ByteTranslatable> getData();
 
-  @SuppressWarnings("unchecked")
   private void loadData() {
-    Map<ByteTranslatable, byte[]> data = getData();
-    for (Map.Entry<ByteTranslatable, byte[]> rawEntry : data.entrySet())
-      add((T) ReflectionUtils.deserialize(deserialize, rawEntry));
+    getData().entrySet().parallelStream()
+      .forEach(rawEntry -> add(ReflectionUtils.deserialize(deserialize, rawEntry)));
   }
 
-  protected abstract void saveData(Map<ByteTranslatable, byte[]> data);
+  protected abstract void saveData(Map<ByteTranslatable, ByteTranslatable> data);
 
   private void save() {
-    Map<ByteTranslatable, byte[]> data = new HashMap<>(entries.size());
+    Stream<Map.Entry<ByteTranslatable, T>> stream = indexedDatabaseComponent.getEntrySet().parallelStream();
+
     if (useDirtyable)
-      for (Map.Entry<ByteTranslatable, T> entry : indexedDatabaseComponent.getEntrySet()) {
-        if (((Dirtyable) entry.getValue()).isDirty())
-          data.put(entry.getKey(), ReflectionUtils.serialize(serialize, entry.getValue()));
-        }
-    else
-      for (Map.Entry<ByteTranslatable, T> entry : indexedDatabaseComponent.getEntrySet())
-        data.put(entry.getKey(), ReflectionUtils.serialize(serialize, entry.getValue()));
+      stream = stream
+        .filter(entry -> ((Dirtyable) entry.getValue()).isDirty())
+        .peek(entry -> ((Dirtyable) entry.getValue()).markClean());
+
+    Map<ByteTranslatable, ByteTranslatable> data = stream
+      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, entry -> ReflectionUtils.serialize(serialize, entry.getValue())));
+
     saveData(data);
   }
 
@@ -139,7 +140,7 @@ public abstract class Database<T> implements Closeable {
     indexedDatabaseComponent.close();
     scheduler.shutdown();
     try {
-      if (!scheduler.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS))
+      if (!scheduler.awaitTermination(5, TimeUnit.SECONDS))
         scheduler.shutdownNow();
     } catch (InterruptedException exception) {
       // TODO Figure log shit out

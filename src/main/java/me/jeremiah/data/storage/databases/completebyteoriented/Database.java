@@ -1,14 +1,15 @@
-package me.jeremiah.data.storage.databases.objectoriented;
+package me.jeremiah.data.storage.databases.completebyteoriented;
 
 import me.jeremiah.data.ByteTranslatable;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.Dirtyable;
+import me.jeremiah.data.storage.ReflectionUtils;
 import me.jeremiah.data.storage.databases.IndexedDatabaseComponent;
 import me.jeremiah.data.storage.databases.SortedDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
-import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
@@ -24,13 +25,16 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class Database<T extends Serializable> implements Closeable {
+public abstract class Database<T> implements Closeable {
 
   private final ScheduledExecutorService scheduler;
 
   private final DatabaseInfo info;
   private final boolean useDirtyable;
   private ScheduledFuture<?> autoSaveTask;
+
+  private final Method serialize;
+  private final Method deserialize;
 
   protected Set<T> entries;
 
@@ -41,6 +45,8 @@ public abstract class Database<T extends Serializable> implements Closeable {
     this.scheduler = Executors.newSingleThreadScheduledExecutor();
     this.info = info;
     this.useDirtyable = Dirtyable.class.isAssignableFrom(entryClass);
+    this.serialize = ReflectionUtils.getSerializeMethod(entryClass);
+    this.deserialize = ReflectionUtils.getDeserializeMethod(entryClass);
     this.indexedDatabaseComponent = new IndexedDatabaseComponent<>(scheduler, entryClass);
     this.sortedDatabaseComponent = new SortedDatabaseComponent<>(scheduler, entryClass);
   }
@@ -63,24 +69,24 @@ public abstract class Database<T extends Serializable> implements Closeable {
     sortedDatabaseComponent.add(entry);
   }
 
-  public final <R> Optional<R> queryById(@NotNull Object rawId, @NotNull Function<T, R> function) {
-    return indexedDatabaseComponent.queryById(rawId, function);
+  public final <R> Optional<R> queryById(@NotNull Object id, @NotNull Function<T, R> function) {
+    return indexedDatabaseComponent.queryById(id, function);
   }
 
-  public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object rawKey, @NotNull Function<T, R> function) {
-    return indexedDatabaseComponent.queryByIndex(index, rawKey, function);
+  public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<T, R> function) {
+    return indexedDatabaseComponent.queryByIndex(index, key, function);
   }
 
   public final <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<T, R> function) {
     return sortedDatabaseComponent.querySorted(sorted, index, function);
   }
 
-  public final Optional<T> updateById(@NotNull Object rawId, @NotNull Consumer<T> update) {
-    return indexedDatabaseComponent.updateById(rawId, update);
+  public final Optional<T> updateById(@NotNull Object id, @NotNull Consumer<T> update) {
+    return indexedDatabaseComponent.updateById(id, update);
   }
 
-  public final Optional<T> updateByIndex(@NotNull String index, @NotNull Object rawKey, @NotNull Consumer<T> update) {
-    return indexedDatabaseComponent.updateByIndex(index, rawKey, update);
+  public final Optional<T> updateByIndex(@NotNull String index, @NotNull Object indexKey, @NotNull Consumer<T> update) {
+    return indexedDatabaseComponent.updateByIndex(index, indexKey, update);
   }
 
   public final Optional<T> updateSorted(@NotNull String sorted, int index, @NotNull Consumer<T> update) {
@@ -95,8 +101,8 @@ public abstract class Database<T extends Serializable> implements Closeable {
     return indexedDatabaseComponent.getById(rawId);
   }
 
-  public final Optional<T> getByIndex(@NotNull String index, @NotNull Object rawKey) {
-    return indexedDatabaseComponent.getByIndex(index, rawKey);
+  public final Optional<T> getByIndex(@NotNull String index, @NotNull Object rawIndexKey) {
+    return indexedDatabaseComponent.getByIndex(index, rawIndexKey);
   }
 
   public final Optional<T> getSorted(@NotNull String sorted, int index) {
@@ -106,7 +112,8 @@ public abstract class Database<T extends Serializable> implements Closeable {
   protected abstract Collection<ByteTranslatable> getData();
 
   private void loadData() {
-    getData().parallelStream().forEach(bytes -> add(bytes.asSerializable()));
+    getData().parallelStream()
+      .forEach(translatable -> add(ReflectionUtils.deserialize(deserialize, translatable.asByteArray())));
   }
 
   protected abstract void saveData(Collection<ByteTranslatable> data);
@@ -114,14 +121,14 @@ public abstract class Database<T extends Serializable> implements Closeable {
   private void save() {
     Stream<T> stream = entries.parallelStream();
 
-    if (!useDirtyable) {
+    if (useDirtyable)
       stream = stream
         .filter(entry -> ((Dirtyable) entry).isDirty())
         .peek(entry -> ((Dirtyable) entry).markClean());
-    }
 
-    Collection<ByteTranslatable> data = stream.map(ByteTranslatable::fromSerializable)
-        .collect(Collectors.toUnmodifiableSet());
+    Collection<ByteTranslatable> data = stream
+      .map(entry -> ReflectionUtils.serialize(serialize, entry))
+      .collect(Collectors.toUnmodifiableSet());
 
     saveData(data);
   }

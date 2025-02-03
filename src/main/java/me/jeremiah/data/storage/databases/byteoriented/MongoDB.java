@@ -49,24 +49,24 @@ public final class MongoDB<T> extends Database<T> {
   }
 
   @Override
-  protected Map<ByteTranslatable, byte[]> getData() {
-    Map<ByteTranslatable, byte[]> data = new HashMap<>();
+  protected Map<ByteTranslatable, ByteTranslatable> getData() {
+    Map<ByteTranslatable, ByteTranslatable> data = new HashMap<>();
     for (Document document : accounts.find()) {
       ByteTranslatable entryId = ByteTranslatable.from(document.get("entry_id", Binary.class).getData());
-      byte[] entryData = document.get("entry_data", Binary.class).getData();
+      ByteTranslatable entryData = ByteTranslatable.fromByteArray(document.get("entry_data", Binary.class).getData());
       data.put(entryId, entryData);
     }
     return data;
   }
 
   @Override
-  protected void saveData(Map<ByteTranslatable, byte[]> data) {
+  protected void saveData(Map<ByteTranslatable, ByteTranslatable> data) {
     List<UpdateOneModel<Document>> writeModels = new ArrayList<>();
 
-    for (Map.Entry<ByteTranslatable, byte[]> entry : data.entrySet()) {
+    for (Map.Entry<ByteTranslatable, ByteTranslatable> entry : data.entrySet()) {
       writeModels.add(new UpdateOneModel<>(
         new Document("entry_id", new Binary(entry.getKey().bytes())),
-        new Document("entry_data", new Binary(entry.getValue())),
+        new Document("entry_data", new Binary(entry.getValue().asByteArray())),
         new UpdateOptions().upsert(true)
       ));
     }

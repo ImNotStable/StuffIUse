@@ -14,19 +14,21 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class ReflectionUtils {
 
-  public static byte[] serialize(Method serializeMethod, Object object) {
+  public static ByteTranslatable serialize(Method serializeMethod, Object object) {
     try {
-      return (byte[]) serializeMethod.invoke(object);
+      return (ByteTranslatable) serializeMethod.invoke(object);
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException("Failed to serialize object", exception);
     }
   }
 
   public static Method getSerializeMethod(Class<?> serializerClass) {
-    List<Method> methods = getAnnotatedObject(Arrays.asList(serializerClass.getDeclaredMethods()), Serializer.class);
+    Stream<Method> methodStream = getAnnotatedObjects(Arrays.asList(serializerClass.getDeclaredMethods()), Serializer.class);
+    List<Method> methods = methodStream.toList();
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
@@ -37,16 +39,18 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Failed to find a method annotated with @Serializer within %s.class".formatted(serializerClass.getName()));
   }
 
-  public static Object deserialize(Method deserializeMethod, Object object) {
+  @SuppressWarnings("unchecked")
+  public static <T> T deserialize(Method deserializeMethod, Object arg) {
     try {
-      return deserializeMethod.invoke(null, object);
+      return (T) deserializeMethod.invoke(null, arg);
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException("Failed to deserialize object", exception);
     }
   }
 
   public static Method getDeserializeMethod(Class<?> deserializerClass) {
-    List<Method> methods = getAnnotatedObject(Arrays.asList(deserializerClass.getDeclaredMethods()), Deserializer.class);
+    Stream<Method> methodStream = getAnnotatedObjects(Arrays.asList(deserializerClass.getDeclaredMethods()), Deserializer.class);
+    List<Method> methods = methodStream.toList();
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
@@ -57,16 +61,9 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Failed to find a method annotated with @Deserializer within %s.class".formatted(deserializerClass.getName()));
   }
 
-  public static ByteTranslatable getId(Field field, Object object) {
-    try {
-      return ByteTranslatable.from(field.get(object));
-    } catch (IllegalAccessException exception) {
-      throw new RuntimeException("Failed to access ID field", exception);
-    }
-  }
-
   public static Field getIdField(Class<?> serializableClass) {
-    List<Field> annotatedFields = getAnnotatedObject(Arrays.asList(serializableClass.getDeclaredFields()), ID.class);
+    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), ID.class);
+    List<Field> annotatedFields = annotatedFieldStream.toList();
 
     if (!annotatedFields.isEmpty()) {
       if (annotatedFields.size() > 1)
@@ -78,7 +75,7 @@ public final class ReflectionUtils {
 
     if (finalFields.length > 0) {
       if (finalFields.length > 1)
-        Logger.getGlobal().log(Level.WARNING, "Multiple final fields found in %s.class, using first one.".formatted(serializableClass.getName()));
+        Logger.getGlobal().log(Level.WARNING, "Multiple final field candidates found for @ID in %s.class, using first one.".formatted(serializableClass.getName()));
       return finalFields[0];
     }
 
@@ -92,13 +89,43 @@ public final class ReflectionUtils {
       .toArray(Field[]::new);
   }
 
+  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
+    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Sorted.class);
+    return annotatedFieldStream.filter(field -> {
+        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
+          Logger.getGlobal().log(Level.SEVERE, "Field %s does not implement comparable".formatted(field));
+          return false;
+        }
+        return true;
+      })
+      .collect(
+        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
+      );
+  }
+
+  public static Map<String, Field> getIndexes(Class<?> serializableClass) {
+    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class);
+    return annotatedFieldStream
+      .filter(field -> !field.isAnnotationPresent(ID.class))
+      .collect(
+        Collectors.toMap(field -> field.getAnnotation(Indexable.class).value(), field -> field)
+      );
+  }
+
   @SuppressWarnings("unchecked")
-  private static <T> List<T> getAnnotatedObject(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
+  private static <T> Stream<T> getAnnotatedObjects(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
     return objects.stream()
       .filter(field -> field.isAnnotationPresent(annotationClass))
       .peek(field -> field.setAccessible(true))
-      .map(field -> (T) field)
-      .toList();
+      .map(field -> (T) field);
+  }
+
+  public static ByteTranslatable getId(Field field, Object object) {
+    try {
+      return ByteTranslatable.from(field.get(object));
+    } catch (IllegalAccessException exception) {
+      throw new RuntimeException("Failed to access ID field", exception);
+    }
   }
 
   public static ByteTranslatable getIndex(Field field, Object object) {
@@ -107,31 +134,6 @@ public final class ReflectionUtils {
     } catch (IllegalAccessException exception) {
       throw new RuntimeException("Failed to access index field", exception);
     }
-  }
-
-  public static Map<String, Field> getIndexes(Class<?> serializableClass) {
-    return Arrays.stream(serializableClass.getDeclaredFields())
-      .filter(field -> field.isAnnotationPresent(Indexable.class) && !field.isAnnotationPresent(ID.class))
-      .peek(field -> field.setAccessible(true))
-      .collect(
-        Collectors.toUnmodifiableMap(field -> field.getAnnotation(Indexable.class).value(), field -> field)
-      );
-  }
-
-  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
-    return Arrays.stream(serializableClass.getDeclaredFields())
-      .filter(field -> field.isAnnotationPresent(Sorted.class))
-      .filter(field -> {
-        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
-          Logger.getGlobal().log(Level.SEVERE, "Field %s does not implement comparable".formatted(field));
-          return false;
-        }
-        return true;
-      })
-      .peek(field -> field.setAccessible(true))
-      .collect(
-        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
-      );
   }
 
   @SuppressWarnings("unchecked")
@@ -165,20 +167,20 @@ public final class ReflectionUtils {
   }
 
   private static int compareAsPrimitive(Class<?> type, Object value1, Object value2) {
-    if (type == int.class)
-      return Integer.compare((int) value1, (int) value2);
-    if (type == long.class)
-      return Long.compare((long) value1, (long) value2);
-    if (type == double.class)
-      return Double.compare((double) value1, (double) value2);
-    if (type == float.class)
-      return Float.compare((float) value1, (float) value2);
     if (type == boolean.class)
       return Boolean.compare((boolean) value1, (boolean) value2);
     if (type == byte.class)
       return Byte.compare((byte) value1, (byte) value2);
     if (type == short.class)
       return Short.compare((short) value1, (short) value2);
+    if (type == int.class)
+      return Integer.compare((int) value1, (int) value2);
+    if (type == long.class)
+      return Long.compare((long) value1, (long) value2);
+    if (type == float.class)
+      return Float.compare((float) value1, (float) value2);
+    if (type == double.class)
+      return Double.compare((double) value1, (double) value2);
     if (type == char.class)
       return Character.compare((char) value1, (char) value2);
     throw new IllegalArgumentException("Unsupported primitive type: " + type.getName());

@@ -53,7 +53,7 @@ public record ByteTranslatable(byte[] bytes) {
       case double[] v -> fromDoubleArray(v);
       case BigDecimal bigDecimal -> fromBigDecimal(bigDecimal);
       case Character c -> fromChar(c);
-
+      case char[] c -> fromCharArray(c);
       case String string -> fromString(string);
       case UUID uuid -> fromUUID(uuid);
       case Location location -> fromLocation(location);
@@ -336,6 +336,7 @@ public record ByteTranslatable(byte[] bytes) {
     try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
          ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {
       objectStream.writeObject(value);
+      objectStream.flush();
       return new ByteTranslatable(byteStream.toByteArray());
     } catch (Exception exception) {
       throw new RuntimeException("Failed to serialize object.", exception);

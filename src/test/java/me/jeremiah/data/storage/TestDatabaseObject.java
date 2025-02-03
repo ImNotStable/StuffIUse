@@ -1,11 +1,6 @@
-package me.jeremiah;
+package me.jeremiah.data.storage;
 
 import me.jeremiah.data.ByteTranslatable;
-import me.jeremiah.data.storage.Deserializer;
-import me.jeremiah.data.storage.ID;
-import me.jeremiah.data.storage.Indexable;
-import me.jeremiah.data.storage.Serializer;
-import me.jeremiah.data.storage.Sorted;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -14,22 +9,22 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class TestDatabaseObject implements Serializable {
+public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
   private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   @Deserializer
-  public static TestDatabaseObject deserialize(Map.Entry<ByteTranslatable, byte[]> entry) {
-    ByteBuffer buffer = ByteBuffer.wrap(entry.getValue());
-    UUID id = entry.getKey().asUUID();
+  public static TestDatabaseObject deserialize(Map.Entry<ByteTranslatable, ByteTranslatable> entry) {
+    ByteBuffer buffer = ByteBuffer.wrap(entry.getValue().asByteArray());
 
+    UUID id = entry.getKey().asUUID();
 
     byte[] nameBytes = new byte[buffer.getInt()];
     buffer.get(nameBytes);
     String name = new String(nameBytes);
-    int age = buffer.getInt();
+    short age = buffer.getShort();
     boolean isCool = buffer.get() == 1;
 
     return new TestDatabaseObject(id, name, age, isCool);
@@ -41,14 +36,16 @@ public class TestDatabaseObject implements Serializable {
   @Indexable("name")
   private final String name;
   @Sorted("age")
-  private final int age;
+  private final short age;
   private final boolean isCool;
 
+  private transient boolean dirty = true;
+
   public TestDatabaseObject(int i) {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (short) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
   }
 
-  public TestDatabaseObject(UUID id, String name, int age, boolean isCool) {
+  public TestDatabaseObject(UUID id, String name, short age, boolean isCool) {
     this.id = id;
     this.name = name;
     this.age = age;
@@ -59,15 +56,19 @@ public class TestDatabaseObject implements Serializable {
     return id;
   }
 
+  public String getName() {
+    return name;
+  }
+
   @Serializer
-  public byte[] serialize() {
+  public ByteTranslatable serialize() {
     byte[] nameBytes = name.getBytes();
-    ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + nameBytes.length + Integer.BYTES + Byte.BYTES);
+    ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + nameBytes.length + Short.BYTES + Byte.BYTES);
     buffer.putInt(nameBytes.length);
     buffer.put(nameBytes);
-    buffer.putInt(age);
+    buffer.putShort(age);
     buffer.put((byte) (isCool ? 1 : 0));
-    return buffer.array();
+    return new ByteTranslatable(buffer.array());
   }
 
   @Override
@@ -100,6 +101,16 @@ public class TestDatabaseObject implements Serializable {
       ", age=" + age +
       ", isCool=" + isCool +
       '}';
+  }
+
+  @Override
+  public boolean isDirty() {
+    return dirty;
+  }
+
+  @Override
+  public void markClean() {
+    dirty = false;
   }
 
 }
