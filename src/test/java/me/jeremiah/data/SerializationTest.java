@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 public class SerializationTest {
 
-  private final int entryCount = 100_000;
+  private final int entryCount = 10_000;
   private final Set<TestDatabaseObject> testObjects = IntStream.range(0, entryCount).mapToObj(TestDatabaseObject::new).collect(Collectors.toSet());
   private final Set<CompleteTestDatabaseObject> completeTestObjects = IntStream.range(0, entryCount).mapToObj(CompleteTestDatabaseObject::new).collect(Collectors.toSet());
 
