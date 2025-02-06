@@ -39,8 +39,6 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   private final short age;
   private final boolean isCool;
 
-  private transient boolean dirty = true;
-
   public TestDatabaseObject(int i) {
     this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (short) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
   }
@@ -105,12 +103,11 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Override
   public boolean isDirty() {
-    return dirty;
+    return true;
   }
 
   @Override
   public void markClean() {
-    dirty = false;
   }
 
 }

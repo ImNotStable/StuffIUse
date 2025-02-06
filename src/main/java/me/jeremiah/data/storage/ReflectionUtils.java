@@ -11,7 +11,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,7 +31,7 @@ public final class ReflectionUtils {
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
-        Logger.getGlobal().log(Level.WARNING, "Multiple methods annotated with @Serializer found in %s.class, using first one.".formatted(serializerClass.getName()));
+        Logger.getGlobal().warning("Multiple methods annotated with @Serializer found in %s.class, using first one.".formatted(serializerClass.getName()));
       return methods.getFirst();
     }
 
@@ -54,7 +53,7 @@ public final class ReflectionUtils {
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
-        Logger.getGlobal().log(Level.WARNING, "Multiple methods annotated with @Deserializer found in %s.class, using first one.".formatted(deserializerClass.getName()));
+        Logger.getGlobal().warning("Multiple methods annotated with @Deserializer found in %s.class, using first one.".formatted(deserializerClass.getName()));
       return methods.getFirst();
     }
 
@@ -67,7 +66,7 @@ public final class ReflectionUtils {
 
     if (!annotatedFields.isEmpty()) {
       if (annotatedFields.size() > 1)
-        Logger.getGlobal().log(Level.WARNING, "Multiple fields annotated with @ID found in %s.class, using first one.".formatted(serializableClass.getName()));
+        Logger.getGlobal().warning("Multiple fields annotated with @ID found in %s.class, using first one.".formatted(serializableClass.getName()));
       return annotatedFields.getFirst();
     }
 
@@ -75,7 +74,7 @@ public final class ReflectionUtils {
 
     if (finalFields.length > 0) {
       if (finalFields.length > 1)
-        Logger.getGlobal().log(Level.WARNING, "Multiple final field candidates found for @ID in %s.class, using first one.".formatted(serializableClass.getName()));
+        Logger.getGlobal().warning("Multiple final field candidates found for @ID in %s.class, using first one.".formatted(serializableClass.getName()));
       return finalFields[0];
     }
 
@@ -93,7 +92,7 @@ public final class ReflectionUtils {
     Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Sorted.class);
     return annotatedFieldStream.filter(field -> {
         if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
-          Logger.getGlobal().log(Level.SEVERE, "Field %s does not implement comparable".formatted(field));
+          Logger.getGlobal().severe("Field %s does not implement comparable".formatted(field));
           return false;
         }
         return true;

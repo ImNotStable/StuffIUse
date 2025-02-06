@@ -28,7 +28,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
   protected void save() {
     Stream<T> stream = entries.parallelStream();
 
-    if (!useDirtyable) {
+    if (useDirtyable) {
       stream = stream
         .filter(entry -> ((Dirtyable) entry).isDirty())
         .peek(entry -> ((Dirtyable) entry).markClean());
