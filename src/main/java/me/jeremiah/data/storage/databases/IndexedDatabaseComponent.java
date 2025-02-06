@@ -4,7 +4,6 @@ import me.jeremiah.data.ByteTranslatable;
 import me.jeremiah.data.storage.ReflectionUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Optional;
@@ -15,9 +14,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class IndexedDatabaseComponent<T> implements Closeable {
+public class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent<T> {
 
-  private final ScheduledExecutorService scheduler;
   private ScheduledFuture<?> autoRefreshIndexesTask;
 
   protected final Field idField;
@@ -27,7 +25,7 @@ public class IndexedDatabaseComponent<T> implements Closeable {
   protected Map<String, Map<ByteTranslatable, T>> indexToEntry;
 
   public IndexedDatabaseComponent(ScheduledExecutorService scheduler, Class<T> entryClass) {
-    this.scheduler = scheduler;
+    super(scheduler);
     this.idField = ReflectionUtils.getIdField(entryClass);
     this.indexes = ReflectionUtils.getIndexes(entryClass);
   }
@@ -36,10 +34,11 @@ public class IndexedDatabaseComponent<T> implements Closeable {
     entryById = new ConcurrentHashMap<>(initialCapacity);
     indexToEntry = new ConcurrentHashMap<>(indexes.size() + 1, 1);
     for (String index : indexes.keySet()) indexToEntry.put(index, new ConcurrentHashMap<>(initialCapacity));
-    autoRefreshIndexesTask = scheduler.scheduleAtFixedRate(this::refreshIndexes, 5, 5, java.util.concurrent.TimeUnit.MINUTES);
+    autoRefreshIndexesTask = getScheduler().scheduleAtFixedRate(this::update, 5, 5, java.util.concurrent.TimeUnit.MINUTES);
   }
 
-  public void refreshIndexes() {
+  @Override
+  public void update() {
     // ID is not required as it is assumed to be final
     indexes.entrySet().parallelStream().forEach(index -> {
       Map<ByteTranslatable, T> newIndex = new ConcurrentHashMap<>(entryById.size());
@@ -53,6 +52,7 @@ public class IndexedDatabaseComponent<T> implements Closeable {
     return entryById.entrySet();
   }
 
+  @Override
   public void add(@NotNull T entry) {
     ByteTranslatable id = ByteTranslatable.from(ReflectionUtils.getId(idField, entry));
     entryById.put(id, entry);
@@ -99,8 +99,8 @@ public class IndexedDatabaseComponent<T> implements Closeable {
   public void close() {
     autoRefreshIndexesTask.cancel(true);
     entryById.clear();
-    indexToEntry.clear();
     indexes.clear();
+    indexToEntry.clear();
   }
 
 }

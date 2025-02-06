@@ -3,7 +3,6 @@ package me.jeremiah.data.storage.databases;
 import me.jeremiah.data.storage.ReflectionUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,9 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class SortedDatabaseComponent<T> implements Closeable {
+public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<T> {
 
-  private final ScheduledExecutorService scheduler;
   private ScheduledFuture<?> autoSortTask;
 
   private final Map<String, Field> sortedFields;
@@ -28,7 +26,7 @@ public final class SortedDatabaseComponent<T> implements Closeable {
   private boolean operating = false;
 
   public SortedDatabaseComponent(ScheduledExecutorService scheduler, Class<T> entryClass) {
-    this.scheduler = scheduler;
+    super(scheduler);
     this.sortedFields = ReflectionUtils.getSortedFields(entryClass);
     if (!sortedFields.isEmpty())
       operating = true;
@@ -40,10 +38,11 @@ public final class SortedDatabaseComponent<T> implements Closeable {
     sortedEntries = new ConcurrentHashMap<>(sortedFields.size() + 1, 1);
     for (String field : sortedFields.keySet())
       sortedEntries.put(field, Collections.synchronizedList(new ArrayList<>(doubledEntryCount)));
-    autoSortTask = scheduler.scheduleAtFixedRate(this::sort, 5, 5, TimeUnit.MINUTES);
+    autoSortTask = getScheduler().scheduleAtFixedRate(this::update, 5, 5, TimeUnit.MINUTES);
   }
 
-  public void sort() {
+  @Override
+  public void update() {
     if (!operating)
       return;
     sortedEntries.entrySet().parallelStream().forEach(sortedEntries -> {
@@ -55,6 +54,7 @@ public final class SortedDatabaseComponent<T> implements Closeable {
     );
   }
 
+  @Override
   public void add(@NotNull T entry) {
     if (!operating)
       return;

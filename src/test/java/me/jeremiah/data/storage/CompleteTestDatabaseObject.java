@@ -15,8 +15,8 @@ public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
   private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   @Deserializer
-  public static CompleteTestDatabaseObject deserialize(byte[] data) {
-    ByteBuffer buffer = ByteBuffer.wrap(data);
+  public static CompleteTestDatabaseObject deserialize(ByteTranslatable data) {
+    ByteBuffer buffer = ByteBuffer.wrap(data.asByteArray());
 
     UUID id = new UUID(buffer.getLong(), buffer.getLong());
     byte[] nameBytes = new byte[buffer.getInt()];

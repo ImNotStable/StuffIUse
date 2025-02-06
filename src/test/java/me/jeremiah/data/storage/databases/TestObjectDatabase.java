@@ -23,12 +23,12 @@ public class TestObjectDatabase extends Database<TestDatabaseObject> {
 
   public TestObjectDatabase() {
     super(new DatabaseInfo(null, 0, null, null, null), TestDatabaseObject.class);
-    setup();
   }
 
   @Test
   @Order(1)
   public void initialStartup() {
+    setup();
     assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
     for (TestDatabaseObject testObject : testObjects) {

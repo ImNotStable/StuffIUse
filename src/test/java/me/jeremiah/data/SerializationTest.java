@@ -59,7 +59,7 @@ public class SerializationTest {
     }
 
     for (ByteTranslatable entry : serializedObjects) {
-      CompleteTestDatabaseObject testObject = CompleteTestDatabaseObject.deserialize(entry.asByteArray());
+      CompleteTestDatabaseObject testObject = CompleteTestDatabaseObject.deserialize(entry);
       assert completeTestObjects.contains(testObject);
     }
   }

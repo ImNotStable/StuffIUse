@@ -19,18 +19,21 @@ public class TestByteDatabase extends Database<TestDatabaseObject> {
   private final Collection<TestDatabaseObject> testObjects = IntStream.range(0, entryCount)
     .mapToObj(TestDatabaseObject::new)
     .collect(Collectors.toUnmodifiableSet());
-  private final Map<ByteTranslatable, ByteTranslatable> fakeSavedEntries = testObjects.stream().collect(HashMap::new, (map, entry) -> {
-    map.put(ByteTranslatable.from(entry.getId()), entry.serialize());
-  }, HashMap::putAll);
+  private final Map<ByteTranslatable, ByteTranslatable> fakeSavedEntries = testObjects.stream()
+    .collect(
+      HashMap::new,
+      (map, entry) -> map.put(ByteTranslatable.from(entry.getId()), entry.serialize()),
+      HashMap::putAll
+    );
 
   public TestByteDatabase() {
     super(new DatabaseInfo(null, 0, null, null, null), TestDatabaseObject.class);
-    setup();
   }
 
   @Test
   @Order(1)
   public void initialStartup() {
+    setup();
     assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
     for (TestDatabaseObject testObject : testObjects) {
