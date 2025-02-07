@@ -1,7 +1,8 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.byteoriented.customcomponents;
 
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.Dirtyable;
+import me.jeremiah.data.storage.databases.SortedDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
@@ -56,12 +57,20 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
     sortedDatabaseComponent.add(entry);
   }
 
+  public final <R> Optional<R> queryById(@NotNull Object id, @NotNull Function<T, R> function) {
+    return indexedDatabaseComponent.queryById(id, function);
+  }
+
   public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<T, R> function) {
     return indexedDatabaseComponent.queryByIndex(index, key, function);
   }
 
   public final <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<T, R> function) {
     return sortedDatabaseComponent.querySorted(sorted, index, function);
+  }
+
+  public final Optional<T> updateById(@NotNull Object id, @NotNull Consumer<T> update) {
+    return indexedDatabaseComponent.updateById(id, update);
   }
 
   public final Optional<T> updateByIndex(@NotNull String index, @NotNull Object indexKey, @NotNull Consumer<T> update) {
@@ -74,6 +83,10 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
 
   public final Set<T> getEntries() {
     return entries;
+  }
+
+  public final Optional<T> getById(@NotNull Object rawId) {
+    return indexedDatabaseComponent.getById(rawId);
   }
 
   public final Optional<T> getByIndex(@NotNull String index, @NotNull Object rawIndexKey) {

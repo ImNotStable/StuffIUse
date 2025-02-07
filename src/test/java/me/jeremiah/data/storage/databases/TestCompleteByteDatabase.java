@@ -32,7 +32,7 @@ public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObjec
     assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
     for (CompleteTestDatabaseObject testObject : testObjects) {
-      assert getById(testObject.getId()).isPresent() : "Failed to find entry by ID";
+      assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
       assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
       assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
     }

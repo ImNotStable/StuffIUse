@@ -4,7 +4,7 @@ import me.jeremiah.data.ByteTranslatable;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.Dirtyable;
 import me.jeremiah.data.storage.ReflectionUtils;
-import me.jeremiah.data.storage.databases.AbstractDatabase;
+import me.jeremiah.data.storage.databases.byteoriented.customcomponents.AbstractDatabase;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 import java.util.stream.Stream;
 
 public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTranslatable>> {
@@ -41,8 +41,7 @@ public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTra
         .peek(entry -> ((Dirtyable) entry).markClean());
 
     Collection<ByteTranslatable> data = stream
-      .map(entry -> ReflectionUtils.serialize(serializeMethod, entry))
-      .collect(Collectors.toUnmodifiableSet());
+      .collect(HashSet::new, (set, entry) -> set.add(ReflectionUtils.serialize(serializeMethod, entry)), HashSet::addAll);
 
     saveData(data);
   }

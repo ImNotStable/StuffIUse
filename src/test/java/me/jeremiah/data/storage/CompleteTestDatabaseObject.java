@@ -28,9 +28,8 @@ public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
     return new CompleteTestDatabaseObject(id, name, age, isCool);
   }
 
-  @ID
+  @Indexable("id")
   private final UUID id;
-
   @Indexable("name")
   private final String name;
   @Sorted("age")

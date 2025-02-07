@@ -15,10 +15,10 @@ public abstract class AbstractDatabaseComponent<T> implements Closeable {
     return scheduler;
   }
 
-  abstract void setup(int initialCapacity);
+  protected abstract void setup(int initialCapacity);
 
-  abstract void update();
+  protected abstract void update();
 
-  abstract void add(T entry);
+  protected abstract void add(T entry);
 
 }

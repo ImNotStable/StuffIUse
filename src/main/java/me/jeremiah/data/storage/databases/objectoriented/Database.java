@@ -34,8 +34,9 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
         .peek(entry -> ((Dirtyable) entry).markClean());
     }
 
-    Collection<ByteTranslatable> data = stream.map(ByteTranslatable::fromSerializable)
-        .collect(Collectors.toUnmodifiableSet());
+    Collection<ByteTranslatable> data = stream
+      .map(ByteTranslatable::fromSerializable)
+      .collect(Collectors.toUnmodifiableSet());
 
     saveData(data);
   }
