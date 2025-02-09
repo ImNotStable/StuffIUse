@@ -1,6 +1,7 @@
 package me.jeremiah.data.storage.databases;
 
 import me.jeremiah.data.ByteTranslatable;
+import me.jeremiah.data.TestData;
 import me.jeremiah.data.storage.CompleteTestDatabaseObject;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.databases.completebyteoriented.Database;
@@ -9,15 +10,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObject> {
 
-  private static final int entryCount = 10_000;
-  private final Collection<CompleteTestDatabaseObject> testObjects = IntStream.range(0, entryCount)
-    .mapToObj(CompleteTestDatabaseObject::new)
-    .collect(Collectors.toUnmodifiableSet());
-  private final Collection<ByteTranslatable> fakeSavedEntries = testObjects.stream()
+  private final Collection<ByteTranslatable> fakeSavedEntries = TestData.COMPLETE_TEST_OBJECTS.stream()
     .map(CompleteTestDatabaseObject::serialize)
     .collect(Collectors.toUnmodifiableSet());
 
@@ -29,9 +25,9 @@ public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObjec
   @Order(1)
   public void initialStartup() {
     setup();
-    assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
+    assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
-    for (CompleteTestDatabaseObject testObject : testObjects) {
+    for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
       assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
       assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
       assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
@@ -48,7 +44,7 @@ public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObjec
 
   @Override
   protected int lookupEntryCount() {
-    return entryCount;
+    return TestData.ENTRY_COUNT;
   }
 
   @Override

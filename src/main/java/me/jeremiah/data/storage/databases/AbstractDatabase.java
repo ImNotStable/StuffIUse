@@ -2,6 +2,8 @@ package me.jeremiah.data.storage.databases;
 
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.Dirtyable;
+import me.jeremiah.data.storage.databases.components.indexing.IndexedDatabaseComponent;
+import me.jeremiah.data.storage.databases.components.sorting.SortedDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
@@ -27,8 +29,8 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
 
   protected Set<T> entries;
 
-  protected final IndexedDatabaseComponent<T> indexedDatabaseComponent;
-  protected final SortedDatabaseComponent<T> sortedDatabaseComponent;
+  private final IndexedDatabaseComponent<T> indexedDatabaseComponent;
+  private final SortedDatabaseComponent<T> sortedDatabaseComponent;
 
   protected AbstractDatabase(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
     this.scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -92,6 +94,7 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
 
   protected abstract void save();
 
+  @Override
   public void close() {
     sortedDatabaseComponent.close();
     autoSaveTask.cancel(false);

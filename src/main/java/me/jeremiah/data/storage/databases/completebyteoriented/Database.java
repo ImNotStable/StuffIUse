@@ -23,15 +23,13 @@ public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTra
     this.deserializeMethod = ReflectionUtils.getDeserializeMethod(entryClass);
   }
 
-  protected abstract Collection<ByteTranslatable> getData();
-
+  @Override
   protected void loadData() {
     getData().parallelStream()
       .forEach(translatable -> add(ReflectionUtils.deserialize(deserializeMethod, translatable)));
   }
 
-  protected abstract void saveData(Collection<ByteTranslatable> data);
-
+  @Override
   protected void save() {
     Stream<T> stream = entries.parallelStream();
 

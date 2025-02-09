@@ -18,10 +18,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
     super(info, entryClass);
   }
 
-  protected abstract int lookupEntryCount();
-
-  protected abstract byte[] getData();
-
+  @Override
   @SuppressWarnings("unchecked")
   protected void loadData() {
     byte[] data = getData();
@@ -38,8 +35,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
     }
   }
 
-  protected abstract void saveData(byte[] data);
-
+  @Override
   protected void save() {
     try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
          ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {

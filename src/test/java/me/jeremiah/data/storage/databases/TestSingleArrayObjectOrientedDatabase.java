@@ -1,33 +1,27 @@
 package me.jeremiah.data.storage.databases;
 
+import me.jeremiah.data.TestData;
 import me.jeremiah.data.storage.CompleteTestDatabaseObject;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.databases.singlearrayobjectoriented.Database;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTestDatabaseObject> {
 
-  private static final int entryCount = 10_000;
-  private final Collection<CompleteTestDatabaseObject> testObjects = IntStream.range(0, entryCount)
-    .mapToObj(CompleteTestDatabaseObject::new)
-    .collect(Collectors.toSet());
   private final byte[] fakeSavedEntries;
 
   {
     try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
          ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {
-      for (CompleteTestDatabaseObject testObject : testObjects)
+      for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS)
         objectStream.writeObject(testObject);
       objectStream.flush();
       fakeSavedEntries = byteStream.toByteArray();
@@ -44,9 +38,9 @@ public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTest
   @Order(1)
   public void initialStartup() {
     setup();
-    assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
+    assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
-    for (CompleteTestDatabaseObject testObject : testObjects) {
+    for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
       assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
       assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
       assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
@@ -63,7 +57,7 @@ public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTest
 
   @Override
   protected int lookupEntryCount() {
-    return entryCount;
+    return TestData.ENTRY_COUNT;
   }
 
   @Override
@@ -75,16 +69,15 @@ public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTest
   protected void saveData(byte[] data) {
     assert data.length == fakeSavedEntries.length : "Data size mismatch";
 
-    Collection<CompleteTestDatabaseObject> realObjects = new HashSet<>(entryCount + 1, 1);
+    Collection<CompleteTestDatabaseObject> realObjects = new HashSet<>(TestData.ENTRY_COUNT + 1, 1);
 
-    try (BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(data));
-         ObjectInputStream inputStream = new ObjectInputStream(bis)) {
-      for (int i = 0; i < entryCount; i++)
+    try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(data))) {
+      for (int i = 0; i < TestData.ENTRY_COUNT; i++)
         realObjects.add((CompleteTestDatabaseObject) inputStream.readObject());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
-    assert testObjects.equals(realObjects) : "Data mismatch";
+    assert TestData.COMPLETE_TEST_OBJECTS.equals(realObjects) : "Data mismatch";
   }
 
 }

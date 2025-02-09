@@ -1,13 +1,13 @@
 package me.jeremiah.data.storage;
 
 import me.jeremiah.data.ByteTranslatable;
+import me.jeremiah.data.storage.databases.components.indexing.Index;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -17,9 +17,10 @@ import java.util.stream.Stream;
 
 public final class ReflectionUtils {
 
-  public static ByteTranslatable serialize(Method serializeMethod, Object object) {
+  @SuppressWarnings("unchecked")
+  public static <T> T serialize(Method serializeMethod, Object object) {
     try {
-      return (ByteTranslatable) serializeMethod.invoke(object);
+      return (T) serializeMethod.invoke(object);
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException("Failed to serialize object", exception);
     }
@@ -60,79 +61,19 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Failed to find a method annotated with @Deserializer within %s.class".formatted(deserializerClass.getName()));
   }
 
-  public static Field getIdField(Class<?> serializableClass) {
-    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), ID.class);
-    List<Field> annotatedFields = annotatedFieldStream.toList();
-
-    if (!annotatedFields.isEmpty()) {
-      if (annotatedFields.size() > 1)
-        Logger.getGlobal().warning("Multiple fields annotated with @ID found in %s.class, using first one.".formatted(serializableClass.getName()));
-      return annotatedFields.getFirst();
-    }
-
-    Field[] finalFields = getFinalFields(serializableClass);
-
-    if (finalFields.length > 0) {
-      if (finalFields.length > 1)
-        Logger.getGlobal().warning("Multiple final field candidates found for @ID in %s.class, using first one.".formatted(serializableClass.getName()));
-      return finalFields[0];
-    }
-
-    throw new IllegalArgumentException("Failed to find a usable ID field within %s.class".formatted(serializableClass.getName()));
-  }
-
-  public static Field[] getFinalFields(Class<?> serializableClass) {
-    return Arrays.stream(serializableClass.getDeclaredFields())
-      .filter(field -> Modifier.isFinal(field.getModifiers()))
-      .peek(field -> field.setAccessible(true))
-      .toArray(Field[]::new);
-  }
-
-  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
-    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Sorted.class);
-    return annotatedFieldStream.filter(field -> {
-        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
-          Logger.getGlobal().severe("Field %s does not implement comparable".formatted(field));
-          return false;
-        }
-        return true;
-      })
-      .collect(
-        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
-      );
-  }
-
-  public static Map<String, Field> getIndexes(Class<?> serializableClass) {
-    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class);
-    return annotatedFieldStream
-      .filter(field -> !field.isAnnotationPresent(ID.class))
-      .collect(
-        Collectors.toMap(field -> field.getAnnotation(Indexable.class).value(), field -> field)
-      );
-  }
-
-  @SuppressWarnings("unchecked")
-  private static <T> Stream<T> getAnnotatedObjects(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
-    return objects.stream()
-      .filter(field -> field.isAnnotationPresent(annotationClass))
-      .peek(field -> field.setAccessible(true))
-      .map(field -> (T) field);
-  }
-
-  public static ByteTranslatable getId(Field field, Object object) {
-    try {
-      return ByteTranslatable.from(field.get(object));
-    } catch (IllegalAccessException exception) {
-      throw new RuntimeException("Failed to access ID field", exception);
-    }
-  }
-
   public static ByteTranslatable getIndex(Field field, Object object) {
     try {
       return ByteTranslatable.from(field.get(object));
     } catch (IllegalAccessException exception) {
       throw new RuntimeException("Failed to access index field", exception);
     }
+  }
+
+  public static List<Index> getIndexes(Class<?> serializableClass) {
+    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class);
+    return annotatedFieldStream
+      .map(field -> new Index(field.getAnnotation(Indexable.class).id(), field))
+      .collect(Collectors.toList());
   }
 
   @SuppressWarnings("unchecked")
@@ -183,6 +124,28 @@ public final class ReflectionUtils {
     if (type == char.class)
       return Character.compare((char) value1, (char) value2);
     throw new IllegalArgumentException("Unsupported primitive type: " + type.getName());
+  }
+
+  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
+    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Sorted.class);
+    return annotatedFieldStream.filter(field -> {
+        if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
+          Logger.getGlobal().severe("Field %s does not implement comparable".formatted(field));
+          return false;
+        }
+        return true;
+      })
+      .collect(
+        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
+      );
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Stream<T> getAnnotatedObjects(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
+    return objects.stream()
+      .filter(field -> field.isAnnotationPresent(annotationClass))
+      .peek(field -> field.setAccessible(true))
+      .map(field -> (T) field);
   }
 
 }

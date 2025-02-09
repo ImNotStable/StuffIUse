@@ -1,6 +1,7 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.components.sorting;
 
 import me.jeremiah.data.storage.ReflectionUtils;
+import me.jeremiah.data.storage.databases.components.AbstractDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;

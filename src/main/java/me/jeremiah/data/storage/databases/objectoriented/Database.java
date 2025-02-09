@@ -17,22 +17,19 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
     super(info, entryClass);
   }
 
-  protected abstract Collection<ByteTranslatable> getData();
-
+  @Override
   protected void loadData() {
     getData().parallelStream().forEach(bytes -> add(bytes.asSerializable()));
   }
 
-  protected abstract void saveData(Collection<ByteTranslatable> data);
-
+  @Override
   protected void save() {
     Stream<T> stream = entries.parallelStream();
 
-    if (useDirtyable) {
+    if (useDirtyable)
       stream = stream
         .filter(entry -> ((Dirtyable) entry).isDirty())
         .peek(entry -> ((Dirtyable) entry).markClean());
-    }
 
     Collection<ByteTranslatable> data = stream
       .map(ByteTranslatable::fromSerializable)

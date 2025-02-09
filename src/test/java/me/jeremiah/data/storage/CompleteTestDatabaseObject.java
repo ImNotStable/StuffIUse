@@ -6,13 +6,13 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+
+import static me.jeremiah.data.TestData.RANDOM;
 
 public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
-  private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   @Deserializer
   public static CompleteTestDatabaseObject deserialize(ByteTranslatable data) {
@@ -28,9 +28,9 @@ public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
     return new CompleteTestDatabaseObject(id, name, age, isCool);
   }
 
-  @Indexable("id")
+  @Indexable(id = "id")
   private final UUID id;
-  @Indexable("name")
+  @Indexable(id = "name")
   private final String name;
   @Sorted("age")
   private final short age;

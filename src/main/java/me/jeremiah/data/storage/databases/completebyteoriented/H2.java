@@ -3,16 +3,17 @@ package me.jeremiah.data.storage.databases.completebyteoriented;
 import com.zaxxer.hikari.HikariConfig;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.SQLStatementHandler;
-import me.jeremiah.data.storage.databases.byteoriented.AbstractSQLDatabase;
 import org.jetbrains.annotations.NotNull;
 
-public final class H2<T> extends AbstractSQLDatabase<T> {
+import java.io.Serializable;
+
+public final class H2<T extends Serializable> extends AbstractSQLDatabase<T> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
-    "CREATE TABLE IF NOT EXISTS entries(entry_id VARBINARY PRIMARY KEY, entry_data VARBINARY);",
+    "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
     "SELECT COUNT(*) FROM entries;",
     "SELECT * FROM entries;",
-    "INSERT INTO entries(entry_id, entry_data) VALUES(?, ?) ON DUPLICATE KEY UPDATE entry_data = VALUES(entry_data);"
+    "INSERT INTO entries(entry) VALUES(?) ON DUPLICATE KEY UPDATE entry = VALUES(entry);"
   );
 
   public H2(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {

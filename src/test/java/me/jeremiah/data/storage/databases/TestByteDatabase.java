@@ -1,28 +1,22 @@
 package me.jeremiah.data.storage.databases;
 
 import me.jeremiah.data.ByteTranslatable;
+import me.jeremiah.data.TestData;
 import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.TestDatabaseObject;
 import me.jeremiah.data.storage.databases.byteoriented.Database;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class TestByteDatabase extends Database<TestDatabaseObject> {
 
-  private static final int entryCount = 10_000;
-  private final Collection<TestDatabaseObject> testObjects = IntStream.range(0, entryCount)
-    .mapToObj(TestDatabaseObject::new)
-    .collect(Collectors.toUnmodifiableSet());
-  private final Map<ByteTranslatable, ByteTranslatable> fakeSavedEntries = testObjects.stream()
+  private final Map<ByteTranslatable, ByteTranslatable> fakeSavedEntries = TestData.TEST_OBJECTS.stream()
     .collect(
       HashMap::new,
-      (map, entry) -> map.put(ByteTranslatable.from(entry.getId()), entry.serialize()),
+      (map, entry) -> entry.serialize().putInto(map),
       HashMap::putAll
     );
 
@@ -34,10 +28,10 @@ public class TestByteDatabase extends Database<TestDatabaseObject> {
   @Order(1)
   public void initialStartup() {
     setup();
-    assert entryCount == getEntries().size() : "Fake saved entries size mismatch";
+    assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
-    for (TestDatabaseObject testObject : testObjects) {
-      assert getById(testObject.getId()).isPresent() : "Failed to find entry by ID";
+    for (TestDatabaseObject testObject : TestData.TEST_OBJECTS) {
+      assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
       assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
       assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
     }
@@ -53,7 +47,7 @@ public class TestByteDatabase extends Database<TestDatabaseObject> {
 
   @Override
   protected int lookupEntryCount() {
-    return entryCount;
+    return TestData.ENTRY_COUNT;
   }
 
   @Override

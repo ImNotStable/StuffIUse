@@ -1,25 +1,25 @@
 package me.jeremiah.data.storage;
 
 import me.jeremiah.data.ByteTranslatable;
+import me.jeremiah.data.Pair;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
+
+import static me.jeremiah.data.TestData.RANDOM;
 
 public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
-  private static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   @Deserializer
-  public static TestDatabaseObject deserialize(Map.Entry<ByteTranslatable, ByteTranslatable> entry) {
-    ByteBuffer buffer = ByteBuffer.wrap(entry.getValue().asByteArray());
+  public static TestDatabaseObject deserialize(Pair<ByteTranslatable, ByteTranslatable> entry) {
+    ByteBuffer buffer = ByteBuffer.wrap(entry.right().asByteArray());
 
-    UUID id = entry.getKey().asUUID();
+    UUID id = entry.left().asUUID();
 
     byte[] nameBytes = new byte[buffer.getInt()];
     buffer.get(nameBytes);
@@ -30,10 +30,9 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
     return new TestDatabaseObject(id, name, age, isCool);
   }
 
-  @ID
+  @Indexable(id = "id")
   private final UUID id;
-
-  @Indexable("name")
+  @Indexable(id = "name")
   private final String name;
   @Sorted("age")
   private final short age;
@@ -59,14 +58,16 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   }
 
   @Serializer
-  public ByteTranslatable serialize() {
+  public Pair<ByteTranslatable, ByteTranslatable> serialize() {
+    ByteTranslatable id = ByteTranslatable.fromUUID(this.id);
+
     byte[] nameBytes = name.getBytes();
     ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + nameBytes.length + Short.BYTES + Byte.BYTES);
     buffer.putInt(nameBytes.length);
     buffer.put(nameBytes);
     buffer.putShort(age);
     buffer.put((byte) (isCool ? 1 : 0));
-    return new ByteTranslatable(buffer.array());
+    return new Pair<>(id, ByteTranslatable.fromByteArray(buffer.array()));
   }
 
   @Override

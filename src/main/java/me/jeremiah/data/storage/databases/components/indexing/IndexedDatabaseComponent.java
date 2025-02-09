@@ -1,10 +1,12 @@
-package me.jeremiah.data.storage.databases;
+package me.jeremiah.data.storage.databases.components.indexing;
 
 import me.jeremiah.data.ByteTranslatable;
 import me.jeremiah.data.storage.ReflectionUtils;
+import me.jeremiah.data.storage.databases.components.AbstractDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +19,7 @@ public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent
 
   private ScheduledFuture<?> autoRefreshIndexesTask;
 
-  private final Map<String, Field> indexes;
+  private final List<Index> indexes;
   private Map<String, Map<ByteTranslatable, T>> indexToEntry;
 
   public IndexedDatabaseComponent(ScheduledExecutorService scheduler, Class<T> entryClass) {
@@ -27,28 +29,25 @@ public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent
 
   public void setup(int initialCapacity) {
     indexToEntry = new ConcurrentHashMap<>(indexes.size() + 1, 1);
-    for (String index : indexes.keySet()) indexToEntry.put(index, new ConcurrentHashMap<>(initialCapacity));
+    for (Index index : indexes) indexToEntry.put(index.getId(), new ConcurrentHashMap<>(initialCapacity));
     autoRefreshIndexesTask = getScheduler().scheduleAtFixedRate(this::update, 5, 5, java.util.concurrent.TimeUnit.MINUTES);
   }
 
   @Override
   public void update() {
-    indexes.entrySet().parallelStream().forEach(index -> {
-      Map<ByteTranslatable, T> originalIndex = indexToEntry.get(index.getKey());
-      Map<ByteTranslatable, T> newIndex = new ConcurrentHashMap<>(originalIndex.size());
-      for (T entry : originalIndex.values()) {
-        ByteTranslatable indexKey = ReflectionUtils.getIndex(index.getValue(), entry);
-        newIndex.put(indexKey, entry);
-      }
-      indexToEntry.put(index.getKey(), newIndex);
+    indexes.parallelStream().filter(index -> !index.isFinal()).forEach(index -> {
+      Map<ByteTranslatable, T> originalIndex = indexToEntry.get(index.getId());
+      Map<ByteTranslatable, T> newIndex = originalIndex.values().stream()
+        .collect(HashMap::new, (map, entry) -> map.put(ReflectionUtils.getIndex(index.getField(), entry), entry), HashMap::putAll);
+      indexToEntry.put(index.getId(), newIndex);
     });
   }
 
   @Override
   public void add(@NotNull T entry) {
-    for (Map.Entry<String, Field> index : indexes.entrySet()) {
-      String indexName = index.getKey();
-      ByteTranslatable indexKey = ReflectionUtils.getIndex(index.getValue(), entry);
+    for (Index index : indexes) {
+      String indexName = index.getId();
+      ByteTranslatable indexKey = ReflectionUtils.getIndex(index.getField(), entry);
       indexToEntry.get(indexName).put(indexKey, entry);
     }
   }
