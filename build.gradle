@@ -33,7 +33,7 @@ dependencies {
     compileOnly 'com.h2database:h2:2.3.232'
     compileOnly 'com.mysql:mysql-connector-j:9.1.0'
     compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
-    compileOnly 'org.postgresql:postgresql:42.7.4'
+    compileOnly 'org.postgresql:postgresql:42.7.5'
     compileOnly 'org.mongodb:mongodb-driver-sync:5.3.0-beta0'
 
     // me.jeremiah.data.ByteTranslatable dependencies
@@ -53,7 +53,7 @@ dependencies {
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.47.2.0'
     testRuntimeOnly 'com.h2database:h2:2.3.232'
     testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
-    testRuntimeOnly 'org.postgresql:postgresql:42.7.4'
+    testRuntimeOnly 'org.postgresql:postgresql:42.7.5'
     testRuntimeOnly 'org.mongodb:mongodb-driver-sync:5.3.0-beta0'
 }
 
