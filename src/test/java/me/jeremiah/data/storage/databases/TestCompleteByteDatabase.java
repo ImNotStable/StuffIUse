@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
-import java.util.stream.Collectors;
+import java.util.HashSet;
 
 public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObject> {
 
   private final Collection<ByteTranslatable> fakeSavedEntries = TestData.COMPLETE_TEST_OBJECTS.stream()
     .map(CompleteTestDatabaseObject::serialize)
-    .collect(Collectors.toUnmodifiableSet());
+    .collect(HashSet::new, HashSet::add, HashSet::addAll);
 
   public TestCompleteByteDatabase() {
     super(new DatabaseInfo(null, 0, null, null, null), CompleteTestDatabaseObject.class);
@@ -28,9 +28,9 @@ public class TestCompleteByteDatabase extends Database<CompleteTestDatabaseObjec
     assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
     for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
-      assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
-      assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
-      assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getByIndex("id", testObject.getId()).orElseThrow()) : "Failed to find entry by ID";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getByIndex("name", testObject.getName()).orElseThrow()) : "Failed to find entry by name";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getSorted("age", i++).orElseThrow()) : "Failed to find entry by age position";
     }
     close();
   }

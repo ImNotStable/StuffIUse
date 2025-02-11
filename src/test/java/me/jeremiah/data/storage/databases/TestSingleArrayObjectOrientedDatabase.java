@@ -41,9 +41,9 @@ public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTest
     assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
     int i = 0;
     for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
-      assert getByIndex("id", testObject.getId()).isPresent() : "Failed to find entry by ID";
-      assert getByIndex("name", testObject.getName()).isPresent() : "Failed to find entry by name";
-      assert getSorted("age", i++).isPresent() : "Failed to find entry by age position";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getByIndex("id", testObject.getId()).orElseThrow()) : "Failed to find entry by ID";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getByIndex("name", testObject.getName()).orElseThrow()) : "Failed to find entry by name";
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(getSorted("age", i++).orElseThrow()) : "Failed to find entry by age position";
     }
     close();
   }

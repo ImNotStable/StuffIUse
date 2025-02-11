@@ -32,6 +32,51 @@ public record ByteTranslatable(byte[] bytes) {
     return Arrays.equals(bytes, bytes1);
   }
 
+  private static final Map<Class<?>, Function<Object, ByteTranslatable>> mappersByClass = new HashMap<Class<?>, Function<Object, ByteTranslatable>>() {
+
+    @SuppressWarnings("unchecked")
+    <T> void putClass(Class<T> tClass, Function<T, ByteTranslatable> mapper) {
+      put(tClass, obj -> mapper.apply((T) obj));
+    }
+
+    {
+      putClass(ByteTranslatable.class, Function.identity());
+      putClass(ByteTranslatable[].class, ByteTranslatable::fromByteTranslatables);
+      putClass(Boolean.class, ByteTranslatable::fromBoolean);
+      putClass(boolean[].class, ByteTranslatable::fromBooleanArray);
+      putClass(Byte.class, ByteTranslatable::fromByte);
+      putClass(byte[].class, ByteTranslatable::fromByteArray);
+      putClass(Short.class, ByteTranslatable::fromShort);
+      putClass(short[].class, ByteTranslatable::fromShortArray);
+      putClass(Integer.class, ByteTranslatable::fromInt);
+      putClass(int[].class, ByteTranslatable::fromIntArray);
+      putClass(Long.class, ByteTranslatable::fromLong);
+      putClass(long[].class, ByteTranslatable::fromLongArray);
+      putClass(BigInteger.class, ByteTranslatable::fromBigInteger);
+      putClass(Float.class, ByteTranslatable::fromFloat);
+      putClass(float[].class, ByteTranslatable::fromFloatArray);
+      putClass(Double.class, ByteTranslatable::fromDouble);
+      putClass(double[].class, ByteTranslatable::fromDoubleArray);
+      putClass(BigDecimal.class, ByteTranslatable::fromBigDecimal);
+      putClass(Character.class, ByteTranslatable::fromChar);
+      putClass(char[].class, ByteTranslatable::fromCharArray);
+      putClass(String.class, ByteTranslatable::fromString);
+      putClass(UUID.class, ByteTranslatable::fromUUID);
+      putClass(Location.class, ByteTranslatable::fromLocation);
+    }
+  };
+
+  public static void register(Class<?> clazz, Function<Object, ByteTranslatable> mapper) {
+    mappersByClass.put(clazz, mapper);
+  }
+
+  public static Function<Object, ByteTranslatable> getMapper(Class<?> clazz) {
+    Function<Object, ByteTranslatable> mapper = mappersByClass.get(clazz);
+    if (mapper == null)
+      throw new IllegalArgumentException("No mapper found for class " + clazz.getName());
+    return mapper;
+  }
+
   public static ByteTranslatable from(@NotNull Object object) {
     return switch (object) {
       case ByteTranslatable byteTranslatable -> byteTranslatable;

@@ -63,15 +63,15 @@ public final class ReflectionUtils {
 
   public static ByteTranslatable getIndex(Field field, Object object) {
     try {
-      return ByteTranslatable.from(field.get(object));
+      Object value = field.get(object);
+      return ByteTranslatable.from(value);
     } catch (IllegalAccessException exception) {
       throw new RuntimeException("Failed to access index field", exception);
     }
   }
 
   public static List<Index> getIndexes(Class<?> serializableClass) {
-    Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class);
-    return annotatedFieldStream
+    return getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class)
       .map(field -> new Index(field.getAnnotation(Indexable.class).id(), field))
       .collect(Collectors.toList());
   }
@@ -140,12 +140,10 @@ public final class ReflectionUtils {
       );
   }
 
-  @SuppressWarnings("unchecked")
-  private static <T> Stream<T> getAnnotatedObjects(List<? extends AccessibleObject> objects, Class<? extends Annotation> annotationClass) {
+  private static <T extends AccessibleObject> Stream<T> getAnnotatedObjects(List<T> objects, Class<? extends Annotation> annotationClass) {
     return objects.stream()
       .filter(field -> field.isAnnotationPresent(annotationClass))
-      .peek(field -> field.setAccessible(true))
-      .map(field -> (T) field);
+      .peek(field -> field.setAccessible(true));
   }
 
 }
