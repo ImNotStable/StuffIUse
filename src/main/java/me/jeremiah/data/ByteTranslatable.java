@@ -14,7 +14,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 
 public record ByteTranslatable(byte[] bytes) {
 
@@ -78,32 +81,7 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable from(@NotNull Object object) {
-    return switch (object) {
-      case ByteTranslatable byteTranslatable -> byteTranslatable;
-      case ByteTranslatable[] byteTranslatables -> fromByteTranslatables(byteTranslatables);
-      case Boolean b -> fromBoolean(b);
-      case boolean[] b -> fromBooleanArray(b);
-      case Byte b -> fromByte(b);
-      case byte[] b -> fromByteArray(b);
-      case Short i -> fromShort(i);
-      case short[] i -> fromShortArray(i);
-      case Integer i -> fromInt(i);
-      case int[] i -> fromIntArray(i);
-      case Long l -> fromLong(l);
-      case long[] l -> fromLongArray(l);
-      case BigInteger bigInteger -> fromBigInteger(bigInteger);
-      case Float v -> fromFloat(v);
-      case float[] v -> fromFloatArray(v);
-      case Double v -> fromDouble(v);
-      case double[] v -> fromDoubleArray(v);
-      case BigDecimal bigDecimal -> fromBigDecimal(bigDecimal);
-      case Character c -> fromChar(c);
-      case char[] c -> fromCharArray(c);
-      case String string -> fromString(string);
-      case UUID uuid -> fromUUID(uuid);
-      case Location location -> fromLocation(location);
-      default -> throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
-    };
+    return mappersByClass.get(object.getClass()).apply(object);
   }
 
   public static ByteTranslatable fromByteTranslatables(ByteTranslatable... byteTranslatables) {
