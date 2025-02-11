@@ -1,17 +1,17 @@
 package me.jeremiah.data.storage.databases.components.indexing;
 
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Modifier;
 
 public final class Index {
 
   private final String id;
   private final boolean isFinal;
-  private final Field field;
+  private final MethodHandle field;
 
-  public Index(String id, Field field) {
+  public Index(String id, MethodHandle field) {
     this.id = id;
-    this.isFinal = Modifier.isFinal(field.getModifiers());
+    this.isFinal = Modifier.isFinal(field.type().returnType().getModifiers());
     this.field = field;
   }
 
@@ -23,7 +23,7 @@ public final class Index {
     return isFinal;
   }
 
-  public Field getField() {
+  public MethodHandle getField() {
     return field;
   }
 

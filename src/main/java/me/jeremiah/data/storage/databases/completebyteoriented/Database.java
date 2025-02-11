@@ -7,15 +7,15 @@ import me.jeremiah.data.storage.ReflectionUtils;
 import me.jeremiah.data.storage.databases.AbstractDatabase;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.stream.Stream;
 
 public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTranslatable>> {
 
-  private final Method serializeMethod;
-  private final Method deserializeMethod;
+  private final MethodHandle serializeMethod;
+  private final MethodHandle deserializeMethod;
 
   protected Database(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
     super(info, entryClass);

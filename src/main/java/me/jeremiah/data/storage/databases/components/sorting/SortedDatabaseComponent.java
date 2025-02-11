@@ -4,7 +4,7 @@ import me.jeremiah.data.storage.ReflectionUtils;
 import me.jeremiah.data.storage.databases.components.AbstractDatabaseComponent;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +21,7 @@ public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<
 
   private ScheduledFuture<?> autoSortTask;
 
-  private final Map<String, Field> sortedFields;
+  private final Map<String, MethodHandle> sortedFields;
   private Map<String, List<T>> sortedEntries;
 
   private boolean operating = false;
@@ -47,7 +47,7 @@ public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<
     if (!operating)
       return;
     sortedEntries.entrySet().parallelStream().forEach(sortedEntries -> {
-        Field field = sortedFields.get(sortedEntries.getKey());
+        MethodHandle field = sortedFields.get(sortedEntries.getKey());
         sortedEntries.getValue().sort((entry1, entry2) ->
           ReflectionUtils.compareSortedFields(field, entry1, entry2)
         );

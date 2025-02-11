@@ -5,6 +5,8 @@ import me.jeremiah.data.storage.databases.components.indexing.Index;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -17,54 +19,72 @@ import java.util.stream.Stream;
 
 public final class ReflectionUtils {
 
-  @SuppressWarnings("unchecked")
-  public static <T> T serialize(Method serializeMethod, Object object) {
+  private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
+  public static MethodHandle wrap(Method method) {
     try {
-      return (T) serializeMethod.invoke(object);
-    } catch (ReflectiveOperationException exception) {
+      return LOOKUP.unreflect(method);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static MethodHandle wrap(Field field) {
+    try {
+      return LOOKUP.unreflectGetter(field);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> T serialize(MethodHandle serializeMethod, Object object) {
+    try {
+      return (T) serializeMethod.bindTo(object).invoke();
+    } catch (Throwable exception) {
       throw new RuntimeException("Failed to serialize object", exception);
     }
   }
 
-  public static Method getSerializeMethod(Class<?> serializerClass) {
+  public static MethodHandle getSerializeMethod(Class<?> serializerClass) {
     Stream<Method> methodStream = getAnnotatedObjects(Arrays.asList(serializerClass.getDeclaredMethods()), Serializer.class);
     List<Method> methods = methodStream.toList();
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
         Logger.getGlobal().warning("Multiple methods annotated with @Serializer found in %s.class, using first one.".formatted(serializerClass.getName()));
-      return methods.getFirst();
+      return wrap(methods.getFirst());
     }
 
     throw new IllegalArgumentException("Failed to find a method annotated with @Serializer within %s.class".formatted(serializerClass.getName()));
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> T deserialize(Method deserializeMethod, Object arg) {
+  public static <T> T deserialize(MethodHandle deserializeMethod, Object arg) {
     try {
-      return (T) deserializeMethod.invoke(null, arg);
-    } catch (ReflectiveOperationException exception) {
+      return (T) deserializeMethod.invoke(arg);
+    } catch (Throwable exception) {
       throw new RuntimeException("Failed to deserialize object", exception);
     }
   }
 
-  public static Method getDeserializeMethod(Class<?> deserializerClass) {
+  public static MethodHandle getDeserializeMethod(Class<?> deserializerClass) {
     Stream<Method> methodStream = getAnnotatedObjects(Arrays.asList(deserializerClass.getDeclaredMethods()), Deserializer.class);
     List<Method> methods = methodStream.toList();
 
     if (!methods.isEmpty()) {
       if (methods.size() > 1)
         Logger.getGlobal().warning("Multiple methods annotated with @Deserializer found in %s.class, using first one.".formatted(deserializerClass.getName()));
-      return methods.getFirst();
+      return wrap(methods.getFirst());
     }
 
     throw new IllegalArgumentException("Failed to find a method annotated with @Deserializer within %s.class".formatted(deserializerClass.getName()));
   }
 
-  public static ByteTranslatable getIndex(Field field, Object object) {
+  public static ByteTranslatable getIndex(MethodHandle field, Object object) {
     try {
-      return ByteTranslatable.from(field.get(object));
-    } catch (IllegalAccessException exception) {
+      return ByteTranslatable.from(field.bindTo(object).invoke());
+    } catch (Throwable exception) {
       throw new RuntimeException("Failed to access index field", exception);
     }
   }
@@ -72,17 +92,17 @@ public final class ReflectionUtils {
   public static List<Index> getIndexes(Class<?> serializableClass) {
     Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Indexable.class);
     return annotatedFieldStream
-      .map(field -> new Index(field.getAnnotation(Indexable.class).id(), field))
+      .map(field -> new Index(field.getAnnotation(Indexable.class).id(), wrap(field)))
       .collect(Collectors.toList());
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> int compareSortedFields(@NotNull Field field, @NotNull T sorted1, @NotNull T sorted2) {
+  public static <T> int compareSortedFields(@NotNull MethodHandle field, @NotNull T sorted1, @NotNull T sorted2) {
     Object value1, value2;
     try {
-      value1 = field.get(sorted1);
-      value2 = field.get(sorted2);
-    } catch (IllegalAccessException exception) {
+      value1 = field.bindTo(sorted1).invoke();
+      value2 = field.bindTo(sorted2).invoke();
+    } catch (Throwable exception) {
       throw new RuntimeException("Failed to access field", exception);
     }
 
@@ -93,7 +113,7 @@ public final class ReflectionUtils {
     if (value2 == null)
       return 1;
 
-    Class<?> type = field.getType();
+    Class<?> type = field.type().returnType();
 
     if (type.isPrimitive())
       return compareAsPrimitive(type, value1, value2) * -1;
@@ -126,7 +146,7 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Unsupported primitive type: " + type.getName());
   }
 
-  public static Map<String, Field> getSortedFields(Class<?> serializableClass) {
+  public static Map<String, MethodHandle> getSortedFields(Class<?> serializableClass) {
     Stream<Field> annotatedFieldStream = getAnnotatedObjects(Arrays.asList(serializableClass.getDeclaredFields()), Sorted.class);
     return annotatedFieldStream.filter(field -> {
         if (!Comparable.class.isAssignableFrom(field.getType()) && !field.getType().isPrimitive()) {
@@ -136,7 +156,7 @@ public final class ReflectionUtils {
         return true;
       })
       .collect(
-        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), field -> field)
+        Collectors.toMap(field -> field.getAnnotation(Sorted.class).value(), ReflectionUtils::wrap)
       );
   }
 
