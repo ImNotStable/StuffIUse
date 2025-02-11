@@ -81,7 +81,7 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable from(@NotNull Object object) {
-    return mappersByClass.get(object.getClass()).apply(object);
+    return getMapper(object.getClass()).apply(object);
   }
 
   public static ByteTranslatable fromByteTranslatables(ByteTranslatable... byteTranslatables) {
