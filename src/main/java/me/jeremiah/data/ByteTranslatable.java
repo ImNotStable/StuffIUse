@@ -375,4 +375,8 @@ public record ByteTranslatable(byte[] bytes) {
     }
   }
 
+  public ByteBuffer asByteBuffer() {
+    return ByteBuffer.wrap(bytes);
+  }
+
 }

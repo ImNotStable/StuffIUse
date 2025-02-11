@@ -17,14 +17,14 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Deserializer
   public static TestDatabaseObject deserialize(Pair<ByteTranslatable, ByteTranslatable> entry) {
-    ByteBuffer buffer = ByteBuffer.wrap(entry.right().asByteArray());
+    ByteBuffer buffer = entry.right().asByteBuffer();
 
     UUID id = entry.left().asUUID();
 
     byte[] nameBytes = new byte[buffer.getInt()];
     buffer.get(nameBytes);
     String name = new String(nameBytes);
-    short age = buffer.getShort();
+    byte age = buffer.get();
     boolean isCool = buffer.get() == 1;
 
     return new TestDatabaseObject(id, name, age, isCool);
@@ -35,14 +35,14 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   @Indexable(id = "name")
   private final String name;
   @Sorted("age")
-  private final short age;
+  private final byte age;
   private final boolean isCool;
 
   public TestDatabaseObject(int i) {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (short) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (byte) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
   }
 
-  public TestDatabaseObject(UUID id, String name, short age, boolean isCool) {
+  public TestDatabaseObject(UUID id, String name, byte age, boolean isCool) {
     this.id = id;
     this.name = name;
     this.age = age;
@@ -57,15 +57,17 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
     return name;
   }
 
+  private static final int BYTE_SIZE = Integer.BYTES + Byte.BYTES + Byte.BYTES;
+
   @Serializer
   public Pair<ByteTranslatable, ByteTranslatable> serialize() {
     ByteTranslatable id = ByteTranslatable.fromUUID(this.id);
 
     byte[] nameBytes = name.getBytes();
-    ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + nameBytes.length + Short.BYTES + Byte.BYTES);
+    ByteBuffer buffer = ByteBuffer.allocate(BYTE_SIZE + nameBytes.length);
     buffer.putInt(nameBytes.length);
     buffer.put(nameBytes);
-    buffer.putShort(age);
+    buffer.put(age);
     buffer.put((byte) (isCool ? 1 : 0));
     return new Pair<>(id, ByteTranslatable.fromByteArray(buffer.array()));
   }

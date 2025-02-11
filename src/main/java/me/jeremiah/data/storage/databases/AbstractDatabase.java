@@ -44,18 +44,36 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
 
   protected void setup() {
     int initialCapacity = lookupEntryCount() * 2;
+    long start = System.currentTimeMillis();
     entries = ConcurrentHashMap.newKeySet(initialCapacity);
+    System.out.println("Time 1: " + (System.currentTimeMillis() - start));
+    start = System.currentTimeMillis();
     indexedDatabaseComponent.setup(initialCapacity);
+    System.out.println("Time 2: " + (System.currentTimeMillis() - start));
+    start = System.currentTimeMillis();
     sortedDatabaseComponent.setup(initialCapacity);
+    System.out.println("Time 3: " + (System.currentTimeMillis() - start));
+    start = System.currentTimeMillis();
     loadData();
+    System.out.println("Time 4: " + (System.currentTimeMillis() - start));
+    System.out.println("Average add() time: " + averageTime);
+    start = System.currentTimeMillis();
     sortedDatabaseComponent.update();
+    System.out.println("Time 5: " + (System.currentTimeMillis() - start));
+    start = System.currentTimeMillis();
     autoSaveTask = scheduler.scheduleAtFixedRate(this::save, info.getAutoSaveInterval(), info.getAutoSaveInterval(), info.getAutoSaveTimeUnit());
+    System.out.println("Time 6: " + (System.currentTimeMillis() - start));
   }
 
+  private long averageTime = 0;
+
   public final void add(T entry) {
+    long start = System.nanoTime();
     entries.add(entry);
     indexedDatabaseComponent.add(entry);
     sortedDatabaseComponent.add(entry);
+    long time = System.nanoTime() - start;
+    averageTime = (averageTime + time) / 2;
   }
 
   public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<T, R> function) {

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatable, ByteTranslatable>> {
@@ -26,9 +27,16 @@ public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatab
 
   @Override
   protected void loadData() {
+    AtomicLong average = new AtomicLong();
     getData().entrySet().parallelStream()
       .map(Pair::of)
-      .forEach(entry -> add(ReflectionUtils.deserialize(deserializeMethod, entry)));
+      .forEach(entry -> {
+        long start = System.nanoTime();
+        T r = ReflectionUtils.deserialize(deserializeMethod, entry);
+        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        add(r);
+      });
+    System.out.println("Average deserialize time: " + average.get());
   }
 
   @SuppressWarnings("unchecked")
@@ -41,9 +49,16 @@ public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatab
         .filter(entry -> ((Dirtyable) entry).isDirty())
         .peek(entry -> ((Dirtyable) entry).markClean());
 
+    AtomicLong average = new AtomicLong();
     Map<ByteTranslatable, ByteTranslatable> data = stream
-      .map(entry -> (Pair<ByteTranslatable, ByteTranslatable>) ReflectionUtils.serialize(serializeMethod, entry))
+      .map(entry -> {
+        long start = System.nanoTime();
+        Pair<ByteTranslatable, ByteTranslatable> r = ReflectionUtils.serialize(serializeMethod, entry);
+        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        return r;
+      })
       .collect(HashMap::new, (map, entry) -> entry.putInto(map), HashMap::putAll);
+    System.out.println("Average serialize time: " + average.get());
 
     saveData(data);
   }
