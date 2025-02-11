@@ -46,6 +46,7 @@ public final class TitleMessage extends AbstractMessage<Title> {
     return times;
   }
 
+  @Override
   @NotNull Title parse(@Nullable final Player player, @NotNull final TagResolver @NotNull ... resolvers) {
     Component title = MiniMessage.miniMessage().deserialize(PAPI.setAllPlaceholders(player, this.title, true), resolvers);
     Component subtitle = MiniMessage.miniMessage().deserialize(PAPI.setAllPlaceholders(player, this.subtitle, true), resolvers);

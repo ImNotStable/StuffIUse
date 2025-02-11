@@ -23,6 +23,7 @@ public class MessagesConfiguration extends AbstractConfiguration implements Loca
     this.messages = new HashMap<>();
   }
 
+  @Override
   public void load() {
     messages.clear();
     YamlConfiguration configuration = loadConfiguration();

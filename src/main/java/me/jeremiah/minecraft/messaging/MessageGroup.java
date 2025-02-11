@@ -17,6 +17,7 @@ public final class MessageGroup extends AbstractMessage<Void> {
     this.messages = messages;
   }
 
+  @Override
   public AbstractMessage<Void> targets(@NotNull Collection<? extends @NotNull Audience> targets) {
     messages.forEach(message -> message.targets(targets));
     return this;

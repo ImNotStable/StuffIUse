@@ -27,6 +27,7 @@ public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent
     this.indexes = ReflectionUtils.getIndexes(entryClass);
   }
 
+  @Override
   public void setup(int initialCapacity) {
     indexToEntry = new ConcurrentHashMap<>(indexes.size() + 1, 1);
     for (Index index : indexes) indexToEntry.put(index.getId(), new ConcurrentHashMap<>(initialCapacity));
