@@ -31,10 +31,10 @@ public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTra
       .forEach(translatable -> {
         long start = System.nanoTime();
         T r = ReflectionUtils.deserialize(deserializeMethod, translatable);
-        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        average.addAndGet(System.nanoTime() - start);
         add(r);
       });
-    System.out.println("Average deserialize time: " + average.get());
+    System.out.println("Average deserialize time: " + average.get() / entries.size());
   }
 
   @Override
@@ -51,10 +51,10 @@ public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTra
       .collect(HashSet::new, (set, entry) -> {
         long start = System.nanoTime();
         ByteTranslatable r = ReflectionUtils.serialize(serializeMethod, entry);
-        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        average.addAndGet(System.nanoTime() - start);
         set.add(r);
       }, HashSet::addAll);
-    System.out.println("Average serialize time: " + average.get());
+    System.out.println("Average serialize time: " + average.get() / data.size());
 
     saveData(data);
   }

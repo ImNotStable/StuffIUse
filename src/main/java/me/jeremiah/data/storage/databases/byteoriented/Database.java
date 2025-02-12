@@ -33,10 +33,10 @@ public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatab
       .forEach(entry -> {
         long start = System.nanoTime();
         T r = ReflectionUtils.deserialize(deserializeMethod, entry);
-        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        average.addAndGet(System.nanoTime() - start);
         add(r);
       });
-    System.out.println("Average deserialize time: " + average.get());
+    System.out.println("Average deserialize time: " + average.get() / entries.size());
   }
 
   @SuppressWarnings("unchecked")
@@ -54,11 +54,11 @@ public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatab
       .map(entry -> {
         long start = System.nanoTime();
         Pair<ByteTranslatable, ByteTranslatable> r = ReflectionUtils.serialize(serializeMethod, entry);
-        average.set((average.get() + (System.nanoTime() - start)) / 2);
+        average.addAndGet(System.nanoTime() - start);
         return r;
       })
       .collect(HashMap::new, (map, entry) -> entry.putInto(map), HashMap::putAll);
-    System.out.println("Average serialize time: " + average.get());
+    System.out.println("Average serialize time: " + average.get() / data.size());
 
     saveData(data);
   }

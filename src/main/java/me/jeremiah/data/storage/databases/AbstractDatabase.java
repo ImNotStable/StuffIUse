@@ -56,7 +56,7 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
     start = System.currentTimeMillis();
     loadData();
     System.out.println("Time 4: " + (System.currentTimeMillis() - start));
-    System.out.println("Average add() time: " + averageTime);
+    System.out.println("Average add() time: " + averageTime / entries.size());
     start = System.currentTimeMillis();
     sortedDatabaseComponent.update();
     System.out.println("Time 5: " + (System.currentTimeMillis() - start));
@@ -72,8 +72,7 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
     entries.add(entry);
     indexedDatabaseComponent.add(entry);
     sortedDatabaseComponent.add(entry);
-    long time = System.nanoTime() - start;
-    averageTime = (averageTime + time) / 2;
+    averageTime += System.nanoTime() - start;
   }
 
   public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<T, R> function) {
