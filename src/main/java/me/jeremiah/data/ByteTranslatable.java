@@ -2,7 +2,6 @@ package me.jeremiah.data;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
@@ -12,7 +11,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +42,6 @@ public record ByteTranslatable(byte[] bytes) {
 
     {
       putClass(ByteTranslatable.class, Function.identity());
-      putClass(ByteTranslatable[].class, ByteTranslatable::fromByteTranslatables);
       putClass(Boolean.class, ByteTranslatable::fromBoolean);
       putClass(boolean[].class, ByteTranslatable::fromBooleanArray);
       putClass(Byte.class, ByteTranslatable::fromByte);
@@ -82,20 +79,6 @@ public record ByteTranslatable(byte[] bytes) {
 
   public static ByteTranslatable from(@NotNull Object object) {
     return getMapper(object.getClass()).apply(object);
-  }
-
-  public static ByteTranslatable fromByteTranslatables(ByteTranslatable... byteTranslatables) {
-    int length = 0;
-    for (ByteTranslatable byteTranslatable : byteTranslatables) {
-      length += byteTranslatable.bytes.length;
-    }
-    byte[] bytes = new byte[length];
-    int index = 0;
-    for (ByteTranslatable byteTranslatable : byteTranslatables) {
-      System.arraycopy(byteTranslatable.bytes, 0, bytes, index, byteTranslatable.bytes.length);
-      index += byteTranslatable.bytes.length;
-    }
-    return new ByteTranslatable(bytes);
   }
 
   public static ByteTranslatable fromBoolean(boolean value) {
@@ -137,71 +120,133 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable fromShort(short value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Short.BYTES).putShort(value).array());
+    byte[] bytes = new byte[Short.BYTES];
+    bytes[0] = (byte) (value >> 8);
+    bytes[1] = (byte) value;
+    return new ByteTranslatable(bytes);
   }
 
   public short asShort() {
-    return ByteBuffer.wrap(bytes).getShort();
+    short value = 0;
+    value |= (short) (bytes[0] << 8);
+    value |= (short) (bytes[1] & 0xFF);
+    return value;
   }
 
   public static ByteTranslatable fromShortArray(short[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Short.BYTES * value.length);
-    for (short s : value)
-      buffer.putShort(s);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Short.BYTES * value.length];
+    for (int i = 0; i < value.length; i++) {
+      bytes[i * Short.BYTES] = (byte) (value[i] >> 8);
+      bytes[i * Short.BYTES + 1] = (byte) value[i];
+    }
+    return new ByteTranslatable(bytes);
   }
 
   public short[] asShortArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     short[] value = new short[bytes.length / Short.BYTES];
-    for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getShort();
+    for (int i = 0; i < value.length; i++) {
+      value[i] = 0;
+      value[i] |= (short) (bytes[i * Short.BYTES] << 8);
+      value[i] |= (short) (bytes[i * Short.BYTES + 1] & 0xFF);
+    }
     return value;
   }
 
   public static ByteTranslatable fromInt(int value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Integer.BYTES).putInt(value).array());
+    byte[] bytes = new byte[Integer.BYTES];
+    bytes[0] = (byte) (value >> 24);
+    bytes[1] = (byte) (value >> 16);
+    bytes[2] = (byte) (value >> 8);
+    bytes[3] = (byte) value;
+    return new ByteTranslatable(bytes);
   }
 
   public int asInt() {
-    return ByteBuffer.wrap(bytes).getInt();
+    int value = 0;
+    value |= (bytes[0] & 0xFF) << 24;
+    value |= (bytes[1] & 0xFF) << 16;
+    value |= (bytes[2] & 0xFF) << 8;
+    value |= bytes[3] & 0xFF;
+    return value;
   }
 
   public static ByteTranslatable fromIntArray(int[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES * value.length);
-    for (int i : value)
-      buffer.putInt(i);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Integer.BYTES * value.length];
+    for (int i = 0; i < value.length; i++) {
+      bytes[i * Integer.BYTES] = (byte) (value[i] >> 24);
+      bytes[i * Integer.BYTES + 1] = (byte) (value[i] >> 16);
+      bytes[i * Integer.BYTES + 2] = (byte) (value[i] >> 8);
+      bytes[i * Integer.BYTES + 3] = (byte) value[i];
+    }
+    return new ByteTranslatable(bytes);
   }
 
   public int[] asIntArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     int[] value = new int[bytes.length / Integer.BYTES];
-    for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getInt();
+    for (int i = 0; i < value.length; i++) {
+      value[i] = 0;
+      value[i] |= (bytes[i * Integer.BYTES] & 0xFF) << 24;
+      value[i] |= (bytes[i * Integer.BYTES + 1] & 0xFF) << 16;
+      value[i] |= (bytes[i * Integer.BYTES + 2] & 0xFF) << 8;
+      value[i] |= bytes[i * Integer.BYTES + 3] & 0xFF;
+    }
     return value;
   }
 
   public static ByteTranslatable fromLong(long value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Long.BYTES).putLong(value).array());
+    byte[] bytes = new byte[Long.BYTES];
+    bytes[0] = (byte) (value >> 56);
+    bytes[1] = (byte) (value >> 48);
+    bytes[2] = (byte) (value >> 40);
+    bytes[3] = (byte) (value >> 32);
+    bytes[4] = (byte) (value >> 24);
+    bytes[5] = (byte) (value >> 16);
+    bytes[6] = (byte) (value >> 8);
+    bytes[7] = (byte) value;
+    return new ByteTranslatable(bytes);
   }
 
   public long asLong() {
-    return ByteBuffer.wrap(bytes).getLong();
+    long value = 0;
+    value |= (long) (bytes[0] & 0xFF) << 56;
+    value |= (long) (bytes[1] & 0xFF) << 48;
+    value |= (long) (bytes[2] & 0xFF) << 40;
+    value |= (long) (bytes[3] & 0xFF) << 32;
+    value |= (long) (bytes[4] & 0xFF) << 24;
+    value |= (long) (bytes[5] & 0xFF) << 16;
+    value |= (long) (bytes[6] & 0xFF) << 8;
+    value |= bytes[7] & 0xFF;
+    return value;
   }
 
   public static ByteTranslatable fromLongArray(long[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * value.length);
-    for (long l : value)
-      buffer.putLong(l);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Long.BYTES * value.length];
+    for (int i = 0; i < value.length; i++) {
+      bytes[i * Long.BYTES] = (byte) (value[i] >> 56);
+      bytes[i * Long.BYTES + 1] = (byte) (value[i] >> 48);
+      bytes[i * Long.BYTES + 2] = (byte) (value[i] >> 40);
+      bytes[i * Long.BYTES + 3] = (byte) (value[i] >> 32);
+      bytes[i * Long.BYTES + 4] = (byte) (value[i] >> 24);
+      bytes[i * Long.BYTES + 5] = (byte) (value[i] >> 16);
+      bytes[i * Long.BYTES + 6] = (byte) (value[i] >> 8);
+      bytes[i * Long.BYTES + 7] = (byte) value[i];
+    }
+    return new ByteTranslatable(bytes);
   }
 
   public long[] asLongArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     long[] value = new long[bytes.length / Long.BYTES];
-    for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getLong();
+    for (int i = 0; i < value.length; i++) {
+      value[i] = 0;
+      value[i] |= (long) (bytes[i * Long.BYTES] & 0xFF) << 56;
+      value[i] |= (long) (bytes[i * Long.BYTES + 1] & 0xFF) << 48;
+      value[i] |= (long) (bytes[i * Long.BYTES + 2] & 0xFF) << 40;
+      value[i] |= (long) (bytes[i * Long.BYTES + 3] & 0xFF) << 32;
+      value[i] |= (long) (bytes[i * Long.BYTES + 4] & 0xFF) << 24;
+      value[i] |= (long) (bytes[i * Long.BYTES + 5] & 0xFF) << 16;
+      value[i] |= (long) (bytes[i * Long.BYTES + 6] & 0xFF) << 8;
+      value[i] |= bytes[i * Long.BYTES + 7] & 0xFF;
+    }
     return value;
   }
 
@@ -214,86 +259,144 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable fromFloat(float value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Float.BYTES).putFloat(value).array());
+    int bits = Float.floatToIntBits(value);
+    byte[] bytes = new byte[Float.BYTES];
+    bytes[0] = (byte) (bits >> 24);
+    bytes[1] = (byte) (bits >> 16);
+    bytes[2] = (byte) (bits >> 8);
+    bytes[3] = (byte) bits;
+    return new ByteTranslatable(bytes);
   }
 
   public float asFloat() {
-    return ByteBuffer.wrap(bytes).getFloat();
+    int bits = 0;
+    bits |= (bytes[0] & 0xFF) << 24;
+    bits |= (bytes[1] & 0xFF) << 16;
+    bits |= (bytes[2] & 0xFF) << 8;
+    bits |= bytes[3] & 0xFF;
+    return Float.intBitsToFloat(bits);
   }
 
   public static ByteTranslatable fromFloatArray(float[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Float.BYTES * value.length);
-    for (float f : value)
-      buffer.putFloat(f);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Float.BYTES * value.length];
+    for (int i = 0; i < value.length; i++) {
+      int bits = Float.floatToIntBits(value[i]);
+      bytes[i * Float.BYTES] = (byte) (bits >> 24);
+      bytes[i * Float.BYTES + 1] = (byte) (bits >> 16);
+      bytes[i * Float.BYTES + 2] = (byte) (bits >> 8);
+      bytes[i * Float.BYTES + 3] = (byte) bits;
+    }
+    return new ByteTranslatable(bytes);
   }
 
   public float[] asFloatArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     float[] value = new float[bytes.length / Float.BYTES];
-    for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getFloat();
+    for (int i = 0; i < value.length; i++) {
+      int bits = 0;
+      bits |= (bytes[i * Float.BYTES] & 0xFF) << 24;
+      bits |= (bytes[i * Float.BYTES + 1] & 0xFF) << 16;
+      bits |= (bytes[i * Float.BYTES + 2] & 0xFF) << 8;
+      bits |= bytes[i * Float.BYTES + 3] & 0xFF;
+      value[i] = Float.intBitsToFloat(bits);
+    }
     return value;
   }
 
   public static ByteTranslatable fromDouble(double value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Double.BYTES).putDouble(value).array());
+    long bits = Double.doubleToLongBits(value);
+    byte[] bytes = new byte[Double.BYTES];
+    bytes[0] = (byte) (bits >> 56);
+    bytes[1] = (byte) (bits >> 48);
+    bytes[2] = (byte) (bits >> 40);
+    bytes[3] = (byte) (bits >> 32);
+    bytes[4] = (byte) (bits >> 24);
+    bytes[5] = (byte) (bits >> 16);
+    bytes[6] = (byte) (bits >> 8);
+    bytes[7] = (byte) bits;
+    return new ByteTranslatable(bytes);
   }
 
   public double asDouble() {
-    return ByteBuffer.wrap(bytes).getDouble();
+    long bits = 0;
+    bits |= (long) (bytes[0] & 0xFF) << 56;
+    bits |= (long) (bytes[1] & 0xFF) << 48;
+    bits |= (long) (bytes[2] & 0xFF) << 40;
+    bits |= (long) (bytes[3] & 0xFF) << 32;
+    bits |= (long) (bytes[4] & 0xFF) << 24;
+    bits |= (long) (bytes[5] & 0xFF) << 16;
+    bits |= (long) (bytes[6] & 0xFF) << 8;
+    bits |= bytes[7] & 0xFF;
+    return Double.longBitsToDouble(bits);
   }
 
   public static ByteTranslatable fromDoubleArray(double[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Double.BYTES * value.length);
-    for (double d : value)
-      buffer.putDouble(d);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Double.BYTES * value.length];
+    for (int i = 0; i < value.length; i++) {
+      long bits = Double.doubleToLongBits(value[i]);
+      bytes[i * Double.BYTES] = (byte) (bits >> 56);
+      bytes[i * Double.BYTES + 1] = (byte) (bits >> 48);
+      bytes[i * Double.BYTES + 2] = (byte) (bits >> 40);
+      bytes[i * Double.BYTES + 3] = (byte) (bits >> 32);
+      bytes[i * Double.BYTES + 4] = (byte) (bits >> 24);
+      bytes[i * Double.BYTES + 5] = (byte) (bits >> 16);
+      bytes[i * Double.BYTES + 6] = (byte) (bits >> 8);
+      bytes[i * Double.BYTES + 7] = (byte) bits;
+    }
+    return new ByteTranslatable(bytes);
   }
 
   public double[] asDoubleArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     double[] value = new double[bytes.length / Double.BYTES];
-    for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getDouble();
+    for (int i = 0; i < value.length; i++) {
+      long bits = 0;
+      bits |= (long) (bytes[i * Double.BYTES] & 0xFF) << 56;
+      bits |= (long) (bytes[i * Double.BYTES + 1] & 0xFF) << 48;
+      bits |= (long) (bytes[i * Double.BYTES + 2] & 0xFF) << 40;
+      bits |= (long) (bytes[i * Double.BYTES + 3] & 0xFF) << 32;
+      bits |= (long) (bytes[i * Double.BYTES + 4] & 0xFF) << 24;
+      bits |= (long) (bytes[i * Double.BYTES + 5] & 0xFF) << 16;
+      bits |= (long) (bytes[i * Double.BYTES + 6] & 0xFF) << 8;
+      bits |= bytes[i * Double.BYTES + 7] & 0xFF;
+      value[i] = Double.longBitsToDouble(bits);
+    }
     return value;
   }
 
   public static ByteTranslatable fromBigDecimal(BigDecimal value) {
-    ByteBuffer buffer = ByteBuffer.allocate(value.toBigInteger().toByteArray().length + Integer.BYTES);
-    buffer.put(value.toBigInteger().toByteArray());
-    buffer.putInt(value.scale());
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[value.toBigInteger().toByteArray().length + Integer.BYTES];
+    byte[] bigIntBytes = value.toBigInteger().toByteArray();
+    System.arraycopy(bigIntBytes, 0, bytes, 0, bigIntBytes.length);
+    bytes[bigIntBytes.length] = (byte) value.scale();
+    return new ByteTranslatable(bytes);
   }
 
   public BigDecimal asBigDecimal() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     byte[] bigIntBytes = new byte[bytes.length - Integer.BYTES];
-    buffer.get(bigIntBytes);
-    int scale = buffer.getInt();
-    return new BigDecimal(new BigInteger(bigIntBytes), scale);
+    System.arraycopy(bytes, 0, bigIntBytes, 0, bigIntBytes.length);
+    BigInteger bigInt = new BigInteger(bigIntBytes);
+    int scale = bytes[bigIntBytes.length];
+    return new BigDecimal(bigInt, scale);
   }
 
   public static ByteTranslatable fromChar(char value) {
-    return new ByteTranslatable(ByteBuffer.allocate(Character.BYTES).putChar(value).array());
+    return fromByte((byte) value);
   }
 
   public char asChar() {
-    return ByteBuffer.wrap(bytes).getChar();
+    return (char) asByte();
   }
 
   public static ByteTranslatable fromCharArray(char[] value) {
-    ByteBuffer buffer = ByteBuffer.allocate(Character.BYTES * value.length);
-    for (char c : value)
-      buffer.putChar(c);
-    return new ByteTranslatable(buffer.array());
+    byte[] bytes = new byte[Character.BYTES * value.length];
+    for (int i = 0; i < value.length; i++)
+      bytes[i] = (byte) value[i];
+    return new ByteTranslatable(bytes);
   }
 
   public char[] asCharArray() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
     char[] value = new char[bytes.length / Character.BYTES];
     for (int i = 0; i < value.length; i++)
-      value[i] = buffer.getChar();
+      value[i] = (char) bytes[i];
     return value;
   }
 
@@ -306,53 +409,185 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable fromUUID(UUID value) {
-    return new ByteTranslatable(
-      ByteBuffer.allocate(Long.BYTES * 2)
-        .putLong(value.getMostSignificantBits())
-        .putLong(value.getLeastSignificantBits())
-        .array()
-    );
+    byte[] bytes = new byte[Long.BYTES * 2];
+    bytes[0] = (byte) (value.getMostSignificantBits() >> 56);
+    bytes[1] = (byte) (value.getMostSignificantBits() >> 48);
+    bytes[2] = (byte) (value.getMostSignificantBits() >> 40);
+    bytes[3] = (byte) (value.getMostSignificantBits() >> 32);
+    bytes[4] = (byte) (value.getMostSignificantBits() >> 24);
+    bytes[5] = (byte) (value.getMostSignificantBits() >> 16);
+    bytes[6] = (byte) (value.getMostSignificantBits() >> 8);
+    bytes[7] = (byte) value.getMostSignificantBits();
+    bytes[8] = (byte) (value.getLeastSignificantBits() >> 56);
+    bytes[9] = (byte) (value.getLeastSignificantBits() >> 48);
+    bytes[10] = (byte) (value.getLeastSignificantBits() >> 40);
+    bytes[11] = (byte) (value.getLeastSignificantBits() >> 32);
+    bytes[12] = (byte) (value.getLeastSignificantBits() >> 24);
+    bytes[13] = (byte) (value.getLeastSignificantBits() >> 16);
+    bytes[14] = (byte) (value.getLeastSignificantBits() >> 8);
+    bytes[15] = (byte) value.getLeastSignificantBits();
+    return new ByteTranslatable(bytes);
   }
 
   public UUID asUUID() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
-    long mostSigBits = buffer.getLong();
-    long leastSigBits = buffer.getLong();
+    long mostSigBits = 0, leastSigBits = 0;
+    mostSigBits |= (long) (bytes[0] & 0xFF) << 56;
+    mostSigBits |= (long) (bytes[1] & 0xFF) << 48;
+    mostSigBits |= (long) (bytes[2] & 0xFF) << 40;
+    mostSigBits |= (long) (bytes[3] & 0xFF) << 32;
+    mostSigBits |= (long) (bytes[4] & 0xFF) << 24;
+    mostSigBits |= (long) (bytes[5] & 0xFF) << 16;
+    mostSigBits |= (long) (bytes[6] & 0xFF) << 8;
+    mostSigBits |= bytes[7] & 0xFF;
+    leastSigBits |= (long) (bytes[8] & 0xFF) << 56;
+    leastSigBits |= (long) (bytes[9] & 0xFF) << 48;
+    leastSigBits |= (long) (bytes[10] & 0xFF) << 40;
+    leastSigBits |= (long) (bytes[11] & 0xFF) << 32;
+    leastSigBits |= (long) (bytes[12] & 0xFF) << 24;
+    leastSigBits |= (long) (bytes[13] & 0xFF) << 16;
+    leastSigBits |= (long) (bytes[14] & 0xFF) << 8;
+    leastSigBits |= bytes[15] & 0xFF;
     return new UUID(mostSigBits, leastSigBits);
   }
 
   public static ByteTranslatable fromLocation(Location location) {
-    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES * 2 + Double.BYTES * 3 + Float.BYTES * 2);
+    byte[] bytes = new byte[Long.BYTES * 2 + Double.BYTES * 3 + Float.BYTES * 2];
 
-    UUID worldUUID = location.getWorld().getUID();
-    buffer.putLong(worldUUID.getMostSignificantBits());
-    buffer.putLong(worldUUID.getLeastSignificantBits());
+    long mostSigBits = location.getWorld().getUID().getMostSignificantBits();
+    bytes[0] = (byte) (mostSigBits >> 56);
+    bytes[1] = (byte) (mostSigBits >> 48);
+    bytes[2] = (byte) (mostSigBits >> 40);
+    bytes[3] = (byte) (mostSigBits >> 32);
+    bytes[4] = (byte) (mostSigBits >> 24);
+    bytes[5] = (byte) (mostSigBits >> 16);
+    bytes[6] = (byte) (mostSigBits >> 8);
+    bytes[7] = (byte) mostSigBits;
 
-    buffer.putDouble(location.getX());
-    buffer.putDouble(location.getY());
-    buffer.putDouble(location.getZ());
+    long leastSigBits = location.getWorld().getUID().getLeastSignificantBits();
+    bytes[8] = (byte) (leastSigBits >> 56);
+    bytes[9] = (byte) (leastSigBits >> 48);
+    bytes[10] = (byte) (leastSigBits >> 40);
+    bytes[11] = (byte) (leastSigBits >> 32);
+    bytes[12] = (byte) (leastSigBits >> 24);
+    bytes[13] = (byte) (leastSigBits >> 16);
+    bytes[14] = (byte) (leastSigBits >> 8);
+    bytes[15] = (byte) leastSigBits;
 
-    buffer.putFloat(location.getYaw());
-    buffer.putFloat(location.getPitch());
+    long x = Double.doubleToLongBits(location.getX());
+    bytes[16] = (byte) (x >> 56);
+    bytes[17] = (byte) (x >> 48);
+    bytes[18] = (byte) (x >> 40);
+    bytes[19] = (byte) (x >> 32);
+    bytes[20] = (byte) (x >> 24);
+    bytes[21] = (byte) (x >> 16);
+    bytes[22] = (byte) (x >> 8);
+    bytes[23] = (byte) x;
 
-    return new ByteTranslatable(buffer.array());
+    long y = Double.doubleToLongBits(location.getY());
+    bytes[24] = (byte) (y >> 56);
+    bytes[25] = (byte) (y >> 48);
+    bytes[26] = (byte) (y >> 40);
+    bytes[27] = (byte) (y >> 32);
+    bytes[28] = (byte) (y >> 24);
+    bytes[29] = (byte) (y >> 16);
+    bytes[30] = (byte) (y >> 8);
+    bytes[31] = (byte) y;
+
+    long z = Double.doubleToLongBits(location.getZ());
+    bytes[32] = (byte) (z >> 56);
+    bytes[33] = (byte) (z >> 48);
+    bytes[34] = (byte) (z >> 40);
+    bytes[35] = (byte) (z >> 32);
+    bytes[36] = (byte) (z >> 24);
+    bytes[37] = (byte) (z >> 16);
+    bytes[38] = (byte) (z >> 8);
+    bytes[39] = (byte) z;
+
+    int yaw = Float.floatToIntBits(location.getYaw());
+    bytes[40] = (byte) (yaw >> 24);
+    bytes[41] = (byte) (yaw >> 16);
+    bytes[42] = (byte) (yaw >> 8);
+    bytes[43] = (byte) yaw;
+
+    int pitch = Float.floatToIntBits(location.getPitch());
+    bytes[44] = (byte) (pitch >> 24);
+    bytes[45] = (byte) (pitch >> 16);
+    bytes[46] = (byte) (pitch >> 8);
+    bytes[47] = (byte) pitch;
+
+    return new ByteTranslatable(bytes);
   }
 
   public Location asLocation() {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    long mostSigBits = 0;
+    mostSigBits |= (long) (bytes[0] & 0xFF) << 56;
+    mostSigBits |= (long) (bytes[1] & 0xFF) << 48;
+    mostSigBits |= (long) (bytes[2] & 0xFF) << 40;
+    mostSigBits |= (long) (bytes[3] & 0xFF) << 32;
+    mostSigBits |= (long) (bytes[4] & 0xFF) << 24;
+    mostSigBits |= (long) (bytes[5] & 0xFF) << 16;
+    mostSigBits |= (long) (bytes[6] & 0xFF) << 8;
+    mostSigBits |= bytes[7] & 0xFF;
 
-    long mostSigBits = buffer.getLong();
-    long leastSigBits = buffer.getLong();
-    World world = Bukkit.getWorld(new UUID(mostSigBits, leastSigBits));
+    long leastSigBits = 0;
+    leastSigBits |= (long) (bytes[8] & 0xFF) << 56;
+    leastSigBits |= (long) (bytes[9] & 0xFF) << 48;
+    leastSigBits |= (long) (bytes[10] & 0xFF) << 40;
+    leastSigBits |= (long) (bytes[11] & 0xFF) << 32;
+    leastSigBits |= (long) (bytes[12] & 0xFF) << 24;
+    leastSigBits |= (long) (bytes[13] & 0xFF) << 16;
+    leastSigBits |= (long) (bytes[14] & 0xFF) << 8;
+    leastSigBits |= bytes[15] & 0xFF;
 
-    double x = buffer.getDouble();
-    double y = buffer.getDouble();
-    double z = buffer.getDouble();
+    long x = 0;
+    x |= (long) (bytes[16] & 0xFF) << 56;
+    x |= (long) (bytes[17] & 0xFF) << 48;
+    x |= (long) (bytes[18] & 0xFF) << 40;
+    x |= (long) (bytes[19] & 0xFF) << 32;
+    x |= (long) (bytes[20] & 0xFF) << 24;
+    x |= (long) (bytes[21] & 0xFF) << 16;
+    x |= (long) (bytes[22] & 0xFF) << 8;
+    x |= bytes[23] & 0xFF;
 
-    float yaw = buffer.getFloat();
-    float pitch = buffer.getFloat();
+    long y = 0;
+    y |= (long) (bytes[24] & 0xFF) << 56;
+    y |= (long) (bytes[25] & 0xFF) << 48;
+    y |= (long) (bytes[26] & 0xFF) << 40;
+    y |= (long) (bytes[27] & 0xFF) << 32;
+    y |= (long) (bytes[28] & 0xFF) << 24;
+    y |= (long) (bytes[29] & 0xFF) << 16;
+    y |= (long) (bytes[30] & 0xFF) << 8;
+    y |= bytes[31] & 0xFF;
 
-    return new Location(world, x, y, z, yaw, pitch);
+    long z = 0;
+    z |= (long) (bytes[32] & 0xFF) << 56;
+    z |= (long) (bytes[33] & 0xFF) << 48;
+    z |= (long) (bytes[34] & 0xFF) << 40;
+    z |= (long) (bytes[35] & 0xFF) << 32;
+    z |= (long) (bytes[36] & 0xFF) << 24;
+    z |= (long) (bytes[37] & 0xFF) << 16;
+    z |= (long) (bytes[38] & 0xFF) << 8;
+    z |= bytes[39] & 0xFF;
+
+    int yaw = 0;
+    yaw |= (bytes[40] & 0xFF) << 24;
+    yaw |= (bytes[41] & 0xFF) << 16;
+    yaw |= (bytes[42] & 0xFF) << 8;
+    yaw |= bytes[43] & 0xFF;
+
+    int pitch = 0;
+    pitch |= (bytes[44] & 0xFF) << 24;
+    pitch |= (bytes[45] & 0xFF) << 16;
+    pitch |= (bytes[46] & 0xFF) << 8;
+    pitch |= bytes[47] & 0xFF;
+
+    return new Location(
+      Bukkit.getWorld(new UUID(mostSigBits, leastSigBits)),
+      Double.longBitsToDouble(x),
+      Double.longBitsToDouble(y),
+      Double.longBitsToDouble(z),
+      Float.intBitsToFloat(yaw),
+      Float.intBitsToFloat(pitch));
   }
 
   public static ByteTranslatable fromSerializable(Serializable value) {
