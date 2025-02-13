@@ -5,7 +5,6 @@ import me.jeremiah.data.Pair;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
 import static me.jeremiah.data.TestData.RANDOM;
@@ -17,15 +16,23 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Deserializer
   public static TestDatabaseObject deserialize(Pair<ByteTranslatable, ByteTranslatable> entry) {
-    ByteBuffer buffer = ByteBuffer.wrap(entry.right().asByteArray());
-
     UUID id = entry.left().asUUID();
 
-    byte[] nameBytes = new byte[buffer.getInt()];
-    buffer.get(nameBytes);
+    byte[] bytes = entry.right().asByteArray();
+
+    int nameLength = 0;
+    nameLength |= (bytes[0] & 0xFF) << 24;
+    nameLength |= (bytes[1] & 0xFF) << 16;
+    nameLength |= (bytes[2] & 0xFF) << 8;
+    nameLength |= (bytes[3] & 0xFF);
+
+    byte[] nameBytes = new byte[nameLength];
+    System.arraycopy(bytes, 4, nameBytes, 0, nameLength);
     String name = new String(nameBytes);
-    short age = buffer.getShort();
-    boolean isCool = buffer.get() == 1;
+
+    byte age = bytes[4 + nameLength];
+
+    boolean isCool = bytes[5 + nameLength] == 1;
 
     return new TestDatabaseObject(id, name, age, isCool);
   }
@@ -35,14 +42,14 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   @Indexable(id = "name")
   private final String name;
   @Sorted("age")
-  private final short age;
+  private final byte age;
   private final boolean isCool;
 
   public TestDatabaseObject(int i) {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (short) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (byte) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
   }
 
-  public TestDatabaseObject(UUID id, String name, short age, boolean isCool) {
+  public TestDatabaseObject(UUID id, String name, byte age, boolean isCool) {
     this.id = id;
     this.name = name;
     this.age = age;
@@ -61,13 +68,23 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   public Pair<ByteTranslatable, ByteTranslatable> serialize() {
     ByteTranslatable id = ByteTranslatable.fromUUID(this.id);
 
-    byte[] nameBytes = name.getBytes();
-    ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + nameBytes.length + Short.BYTES + Byte.BYTES);
-    buffer.putInt(nameBytes.length);
-    buffer.put(nameBytes);
-    buffer.putShort(age);
-    buffer.put((byte) (isCool ? 1 : 0));
-    return new Pair<>(id, ByteTranslatable.fromByteArray(buffer.array()));
+    byte[] bytes = new byte[Integer.BYTES + name.length() + Byte.BYTES + Byte.BYTES];
+
+    int nameLength = name.length();
+    bytes[0] = (byte) (nameLength >>> 24);
+    bytes[1] = (byte) (nameLength >>> 16);
+    bytes[2] = (byte) (nameLength >>> 8);
+    bytes[3] = (byte) nameLength;
+
+    int i = 0;
+    for (byte b : name.getBytes())
+      bytes[4 + i++] = b;
+
+    bytes[4 + nameLength] = age;
+
+    bytes[5 + nameLength] = (byte) (isCool ? 1 : 0);
+
+    return new Pair<>(id, ByteTranslatable.fromByteArray(bytes));
   }
 
   @Override

@@ -13,27 +13,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class SerializationTest {
-
-  private final Set<TestDatabaseObject> testObjects = IntStream.range(0, TestData.ENTRY_COUNT).mapToObj(TestDatabaseObject::new).collect(Collectors.toSet());
-  private final Set<CompleteTestDatabaseObject> completeTestObjects = IntStream.range(0, TestData.ENTRY_COUNT).mapToObj(CompleteTestDatabaseObject::new).collect(Collectors.toSet());
 
   @Test
   public void testNativeSerialization() {
     Collection<ByteTranslatable> serializedObjects = new HashSet<>(TestData.ENTRY_COUNT + 1, 1);
 
-    for (TestDatabaseObject testObject : testObjects) {
+    for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
       ByteTranslatable byteTranslatable = ByteTranslatable.fromSerializable(testObject);
       serializedObjects.add(byteTranslatable);
     }
 
     for (ByteTranslatable byteTranslatable : serializedObjects) {
-      TestDatabaseObject testObject = byteTranslatable.asSerializable();
-      assert testObjects.contains(testObject);
+      CompleteTestDatabaseObject testObject = byteTranslatable.asSerializable();
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(testObject);
     }
   }
 
@@ -43,7 +37,7 @@ public class SerializationTest {
 
     try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
          ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {
-      for (TestDatabaseObject testObject : testObjects)
+      for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS)
         objectStream.writeObject(testObject);
       byteStream.flush();
       objectStream.flush();
@@ -53,8 +47,8 @@ public class SerializationTest {
     try (ByteArrayInputStream byteStream = new ByteArrayInputStream(bytes);
          ObjectInputStream objectStream = new ObjectInputStream(byteStream)) {
       for (int i = 0; i < TestData.ENTRY_COUNT; i++) {
-        TestDatabaseObject testObject = (TestDatabaseObject) objectStream.readObject();
-        assert testObjects.contains(testObject);
+        CompleteTestDatabaseObject testObject = (CompleteTestDatabaseObject) objectStream.readObject();
+        assert TestData.COMPLETE_TEST_OBJECTS.contains(testObject);
       }
     }
   }
@@ -63,14 +57,14 @@ public class SerializationTest {
   public void testSerialization() {
     HashMap<ByteTranslatable, ByteTranslatable> serializedObjects = new HashMap<>(TestData.ENTRY_COUNT + 1, 1);
 
-    for (TestDatabaseObject testObject : testObjects) {
+    for (TestDatabaseObject testObject : TestData.TEST_OBJECTS) {
       Pair<ByteTranslatable, ByteTranslatable> entry = testObject.serialize();
       entry.putInto(serializedObjects);
     }
 
     for (Map.Entry<ByteTranslatable, ByteTranslatable> entry : serializedObjects.entrySet()) {
       TestDatabaseObject testObject = TestDatabaseObject.deserialize(Pair.of(entry));
-      assert testObjects.contains(testObject);
+      assert TestData.TEST_OBJECTS.contains(testObject);
     }
   }
 
@@ -78,14 +72,14 @@ public class SerializationTest {
   public void testCompleteSerialization() {
     Collection<ByteTranslatable> serializedObjects = new HashSet<>(TestData.ENTRY_COUNT + 1, 1);
 
-    for (CompleteTestDatabaseObject testObject : completeTestObjects) {
+    for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
       ByteTranslatable value = testObject.serialize();
       serializedObjects.add(value);
     }
 
     for (ByteTranslatable entry : serializedObjects) {
       CompleteTestDatabaseObject testObject = CompleteTestDatabaseObject.deserialize(entry);
-      assert completeTestObjects.contains(testObject);
+      assert TestData.COMPLETE_TEST_OBJECTS.contains(testObject);
     }
   }
 

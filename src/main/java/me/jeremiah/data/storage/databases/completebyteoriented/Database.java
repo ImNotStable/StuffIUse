@@ -39,7 +39,8 @@ public abstract class Database<T> extends AbstractDatabase<T, Collection<ByteTra
         .peek(entry -> ((Dirtyable) entry).markClean());
 
     Collection<ByteTranslatable> data = stream
-      .collect(HashSet::new, (set, entry) -> set.add(ReflectionUtils.serialize(serializeMethod, entry)), HashSet::addAll);
+      .map(entry -> (ByteTranslatable) ReflectionUtils.serialize(serializeMethod, entry))
+      .collect(HashSet::new, HashSet::add, HashSet::addAll);
 
     saveData(data);
   }
