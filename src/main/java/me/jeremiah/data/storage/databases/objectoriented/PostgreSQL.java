@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 
-public final class PostgreSQL<T extends Serializable> extends AbstractSQLDatabase<T> {
+public final class PostgreSQL<ENTRY extends Serializable> extends AbstractSQLDatabase<ENTRY> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
     "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
@@ -16,7 +16,7 @@ public final class PostgreSQL<T extends Serializable> extends AbstractSQLDatabas
     "INSERT INTO entries(entry) VALUES(?) ON CONFLICT(entry) DO UPDATE SET entry = EXCLUDED.entry;"
   );
 
-  public PostgreSQL(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public PostgreSQL(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(org.postgresql.Driver.class, HANDLER, info, entryClass);
   }
 

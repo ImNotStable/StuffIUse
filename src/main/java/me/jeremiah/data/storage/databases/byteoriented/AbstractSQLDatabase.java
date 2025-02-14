@@ -16,13 +16,13 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractSQLDatabase<T> extends Database<T> {
+public abstract class AbstractSQLDatabase<ENTRY> extends Database<ENTRY> {
 
   private final SQLStatementHandler statementHandler;
 
   private final HikariDataSource dataSource;
 
-  protected AbstractSQLDatabase(@NotNull Class<? extends Driver> driver, SQLStatementHandler statementHandler, @NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected AbstractSQLDatabase(@NotNull Class<? extends Driver> driver, SQLStatementHandler statementHandler, @NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
     if (DriverManager.drivers().noneMatch(driver::isInstance))
       try {

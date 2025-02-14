@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 
-public final class MySQL<T extends Serializable> extends AbstractSQLDatabase<T> {
+public final class MySQL<ENTRY extends Serializable> extends AbstractSQLDatabase<ENTRY> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
     "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
@@ -16,7 +16,7 @@ public final class MySQL<T extends Serializable> extends AbstractSQLDatabase<T> 
     "INSERT INTO entries(entry) VALUES(?) ON DUPLICATE KEY UPDATE entry = VALUES(entry);"
   );
 
-  public MySQL(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public MySQL(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(com.mysql.cj.jdbc.Driver.class, HANDLER, info, entryClass);
   }
 

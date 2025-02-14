@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 
-public final class SQLite<T extends Serializable> extends AbstractSQLDatabase<T> {
+public final class SQLite<ENTRY extends Serializable> extends AbstractSQLDatabase<ENTRY> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
     "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
@@ -16,7 +16,7 @@ public final class SQLite<T extends Serializable> extends AbstractSQLDatabase<T>
     "INSERT INTO entries(entry) VALUES(?) ON CONFLICT(entry) DO UPDATE SET entry = EXCLUDED.entry;"
   );
 
-  public SQLite(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public SQLite(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(org.sqlite.JDBC.class, HANDLER, info, entryClass);
   }
 

@@ -17,13 +17,13 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
 
-public abstract class AbstractSQLDatabase<T extends Serializable> extends Database<T> {
+public abstract class AbstractSQLDatabase<ENTRY extends Serializable> extends Database<ENTRY> {
 
   private final SQLStatementHandler statementHandler;
 
   private final HikariDataSource dataSource;
 
-  protected AbstractSQLDatabase(@NotNull Class<? extends Driver> driver, SQLStatementHandler statementHandler, @NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected AbstractSQLDatabase(@NotNull Class<? extends Driver> driver, SQLStatementHandler statementHandler, @NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
     if (DriverManager.drivers().noneMatch(driver::isInstance))
       try {

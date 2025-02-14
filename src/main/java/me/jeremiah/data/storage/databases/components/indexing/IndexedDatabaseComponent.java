@@ -15,14 +15,14 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent<T> {
+public final class IndexedDatabaseComponent<ENTRY> extends AbstractDatabaseComponent<ENTRY> {
 
   private ScheduledFuture<?> autoRefreshIndexesTask;
 
   private final List<Index> indexes;
-  private Map<String, Map<ByteTranslatable, T>> indexToEntry;
+  private Map<String, Map<ByteTranslatable, ENTRY>> indexToEntry;
 
-  public IndexedDatabaseComponent(ScheduledExecutorService scheduler, Class<T> entryClass) {
+  public IndexedDatabaseComponent(ScheduledExecutorService scheduler, Class<ENTRY> entryClass) {
     super(scheduler);
     this.indexes = ReflectionUtils.getIndexes(entryClass);
   }
@@ -37,15 +37,15 @@ public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent
   @Override
   public void update() {
     indexes.parallelStream().filter(index -> !index.isFinal()).forEach(index -> {
-      Map<ByteTranslatable, T> originalIndex = indexToEntry.get(index.getId());
-      Map<ByteTranslatable, T> newIndex = originalIndex.values().stream()
+      Map<ByteTranslatable, ENTRY> originalIndex = indexToEntry.get(index.getId());
+      Map<ByteTranslatable, ENTRY> newIndex = originalIndex.values().stream()
         .collect(HashMap::new, (map, entry) -> map.put(ReflectionUtils.getIndex(index.getField(), entry), entry), HashMap::putAll);
       indexToEntry.put(index.getId(), newIndex);
     });
   }
 
   @Override
-  public void add(@NotNull T entry) {
+  public void add(@NotNull ENTRY entry) {
     for (Index index : indexes) {
       String indexName = index.getId();
       ByteTranslatable indexKey = ReflectionUtils.getIndex(index.getField(), entry);
@@ -53,18 +53,18 @@ public final class IndexedDatabaseComponent<T> extends AbstractDatabaseComponent
     }
   }
 
-  public <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object rawKey, @NotNull Function<T, R> function) {
+  public <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object rawKey, @NotNull Function<ENTRY, R> function) {
     return getByIndex(index, rawKey).map(function);
   }
 
-  public Optional<T> updateByIndex(@NotNull String index, Object indexKey, @NotNull Consumer<T> update) {
+  public Optional<ENTRY> updateByIndex(@NotNull String index, Object indexKey, @NotNull Consumer<ENTRY> update) {
     return getByIndex(index, indexKey).map(entry -> {
       update.accept(entry);
       return entry;
     });
   }
 
-  public Optional<T> getByIndex(@NotNull String index, @NotNull Object rawKey) {
+  public Optional<ENTRY> getByIndex(@NotNull String index, @NotNull Object rawKey) {
     ByteTranslatable indexKey = ByteTranslatable.from(rawKey);
     return Optional.ofNullable(indexToEntry.get(index).get(indexKey));
   }

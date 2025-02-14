@@ -13,12 +13,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatable, ByteTranslatable>> {
+public abstract class Database<ENTRY> extends AbstractDatabase<ENTRY, Map<ByteTranslatable, ByteTranslatable>> {
 
   private final Method serializeMethod;
   private final Method deserializeMethod;
 
-  protected Database(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected Database(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
     this.serializeMethod = ReflectionUtils.getSerializeMethod(entryClass);
     this.deserializeMethod = ReflectionUtils.getDeserializeMethod(entryClass);
@@ -34,7 +34,7 @@ public abstract class Database<T> extends AbstractDatabase<T, Map<ByteTranslatab
   @SuppressWarnings("unchecked")
   @Override
   protected void save() {
-    Stream<T> stream = entries.parallelStream();
+    Stream<ENTRY> stream = entries.parallelStream();
 
     if (useDirtyable)
       stream = stream

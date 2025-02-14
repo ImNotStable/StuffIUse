@@ -5,7 +5,7 @@ import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.SQLStatementHandler;
 import org.jetbrains.annotations.NotNull;
 
-public final class SQLite<T> extends AbstractSQLDatabase<T> {
+public final class SQLite<ENTRY> extends AbstractSQLDatabase<ENTRY> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
     "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
@@ -14,7 +14,7 @@ public final class SQLite<T> extends AbstractSQLDatabase<T> {
     "INSERT INTO entries(entry) VALUES(?) ON CONFLICT(entry) DO UPDATE SET entry = EXCLUDED.entry;"
   );
 
-  public SQLite(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public SQLite(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(org.sqlite.JDBC.class, HANDLER, info, entryClass);
   }
 

@@ -5,7 +5,7 @@ import me.jeremiah.data.storage.DatabaseInfo;
 import me.jeremiah.data.storage.SQLStatementHandler;
 import org.jetbrains.annotations.NotNull;
 
-public final class MariaDB<T> extends AbstractSQLDatabase<T> {
+public final class MariaDB<ENTRY> extends AbstractSQLDatabase<ENTRY> {
 
   private static final SQLStatementHandler HANDLER = new SQLStatementHandler(
     "CREATE TABLE IF NOT EXISTS entries(entry VARBINARY PRIMARY KEY);",
@@ -14,7 +14,7 @@ public final class MariaDB<T> extends AbstractSQLDatabase<T> {
     "INSERT INTO entries(entry) VALUES(?) ON DUPLICATE KEY UPDATE entry = VALUES(entry);"
   );
 
-  public MariaDB(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public MariaDB(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(org.mariadb.jdbc.Driver.class, HANDLER, info, entryClass);
   }
 

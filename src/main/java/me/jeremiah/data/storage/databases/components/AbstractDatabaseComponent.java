@@ -3,7 +3,7 @@ package me.jeremiah.data.storage.databases.components;
 import java.io.Closeable;
 import java.util.concurrent.ScheduledExecutorService;
 
-public abstract class AbstractDatabaseComponent<T> implements Closeable {
+public abstract class AbstractDatabaseComponent<ENTRY> implements Closeable {
 
   private final ScheduledExecutorService scheduler;
 
@@ -19,6 +19,6 @@ public abstract class AbstractDatabaseComponent<T> implements Closeable {
 
   protected abstract void update();
 
-  protected abstract void add(T entry);
+  protected abstract void add(ENTRY entry);
 
 }

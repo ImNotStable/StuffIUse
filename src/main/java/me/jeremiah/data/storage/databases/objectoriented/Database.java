@@ -11,9 +11,9 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public abstract class Database<T extends Serializable> extends AbstractDatabase<T, Collection<ByteTranslatable>> {
+public abstract class Database<ENTRY extends Serializable> extends AbstractDatabase<ENTRY, Collection<ByteTranslatable>> {
 
-  protected Database(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected Database(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
   }
 
@@ -24,7 +24,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
 
   @Override
   protected void save() {
-    Stream<T> stream = entries.parallelStream();
+    Stream<ENTRY> stream = entries.parallelStream();
 
     if (useDirtyable)
       stream = stream

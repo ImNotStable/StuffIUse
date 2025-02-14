@@ -21,12 +21,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-public final class MongoDB<T> extends Database<T> {
+public final class MongoDB<ENTRY> extends Database<ENTRY> {
 
   private final MongoClient client;
   private final MongoCollection<Document> accounts;
 
-  public MongoDB(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  public MongoDB(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
 
     MongoClientSettings settings = MongoClientSettings.builder()

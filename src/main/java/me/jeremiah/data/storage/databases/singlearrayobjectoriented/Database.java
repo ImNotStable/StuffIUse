@@ -12,9 +12,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-public abstract class Database<T extends Serializable> extends AbstractDatabase<T, byte[]> {
+public abstract class Database<ENTRY extends Serializable> extends AbstractDatabase<ENTRY, byte[]> {
 
-  protected Database(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected Database(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     super(info, entryClass);
   }
 
@@ -26,7 +26,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
 
     try (ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(data))) {
       while (true) {
-        T entry = (T) inputStream.readObject();
+        ENTRY entry = (ENTRY) inputStream.readObject();
         add(entry);
       }
     } catch (EOFException ignored) {
@@ -39,7 +39,7 @@ public abstract class Database<T extends Serializable> extends AbstractDatabase<
   protected void save() {
     try (ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
          ObjectOutputStream objectStream = new ObjectOutputStream(byteStream)) {
-      for (T entry : entries)
+      for (ENTRY entry : entries)
         objectStream.writeObject(entry);
       objectStream.flush();
       saveData(byteStream.toByteArray());

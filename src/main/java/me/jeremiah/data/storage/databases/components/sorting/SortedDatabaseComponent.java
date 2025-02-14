@@ -17,16 +17,16 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<T> {
+public final class SortedDatabaseComponent<ENTRY> extends AbstractDatabaseComponent<ENTRY> {
 
   private ScheduledFuture<?> autoSortTask;
 
   private final Map<String, Field> sortedFields;
-  private Map<String, List<T>> sortedEntries;
+  private Map<String, List<ENTRY>> sortedEntries;
 
   private boolean operating = false;
 
-  public SortedDatabaseComponent(ScheduledExecutorService scheduler, Class<T> entryClass) {
+  public SortedDatabaseComponent(ScheduledExecutorService scheduler, Class<ENTRY> entryClass) {
     super(scheduler);
     this.sortedFields = ReflectionUtils.getSortedFields(entryClass);
     if (!sortedFields.isEmpty())
@@ -56,19 +56,19 @@ public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<
   }
 
   @Override
-  public void add(@NotNull T entry) {
+  public void add(@NotNull ENTRY entry) {
     if (!operating)
       return;
     sortedFields.keySet().forEach(sortedKey -> sortedEntries.get(sortedKey).add(entry));
   }
 
-  public <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<T, R> function) {
+  public <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<ENTRY, R> function) {
     if (!operating)
       return Optional.empty();
     return Optional.ofNullable(sortedEntries.get(sorted).get(index)).map(function);
   }
 
-  public Optional<T> updateSorted(@NotNull String sorted, int index, @NotNull Consumer<T> update) {
+  public Optional<ENTRY> updateSorted(@NotNull String sorted, int index, @NotNull Consumer<ENTRY> update) {
     if (!operating)
       return Optional.empty();
     return Optional.ofNullable(sortedEntries.get(sorted).get(index)).map(entry -> {
@@ -77,7 +77,7 @@ public final class SortedDatabaseComponent<T> extends AbstractDatabaseComponent<
     });
   }
 
-  public Optional<T> getSorted(@NotNull String sorted, int index) {
+  public Optional<ENTRY> getSorted(@NotNull String sorted, int index) {
     if (!operating)
       return Optional.empty();
     return Optional.ofNullable(sortedEntries.get(sorted).get(index));
