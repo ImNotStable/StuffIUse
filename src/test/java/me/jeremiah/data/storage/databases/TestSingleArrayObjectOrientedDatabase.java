@@ -38,7 +38,7 @@ public class TestSingleArrayObjectOrientedDatabase extends Database<CompleteTest
   @Order(1)
   public void initialStartup() {
     setup();
-    assert TestData.ENTRY_COUNT == getEntries().size() : "Fake saved entries size mismatch";
+    assert TestData.ENTRY_COUNT == entries.size() : "Fake saved entries size mismatch";
     int i = 0;
     for (CompleteTestDatabaseObject testObject : TestData.COMPLETE_TEST_OBJECTS) {
       assert TestData.COMPLETE_TEST_OBJECTS.contains(getByIndex("id", testObject.getId()).orElseThrow()) : "Failed to find entry by ID";

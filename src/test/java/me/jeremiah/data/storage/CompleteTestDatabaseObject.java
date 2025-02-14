@@ -4,9 +4,8 @@ import me.jeremiah.data.ByteTranslatable;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 import java.util.UUID;
-
-import static me.jeremiah.data.TestData.RANDOM;
 
 public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
 
@@ -64,7 +63,7 @@ public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
   private final boolean isCool;
 
   public CompleteTestDatabaseObject(int i) {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (byte) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+    this(new UUID(i, i), "Test_Username_" + i, (byte) (i % 120), (i % 2) == 0);
   }
 
   public CompleteTestDatabaseObject(UUID id, String name, byte age, boolean isCool) {
@@ -138,21 +137,12 @@ public class CompleteTestDatabaseObject implements Dirtyable, Serializable {
 
   @Override
   public int hashCode() {
-    int result = id.hashCode();
-    result = 31 * result + name.hashCode();
-    result = 31 * result + age;
-    result = 31 * result + (isCool ? 1 : 0);
-    return result;
+    return Objects.hash(id, name, age, isCool);
   }
 
   @Override
   public String toString() {
-    return "TestDatabaseObject{" +
-      "id=" + id +
-      ", name='" + name + '\'' +
-      ", age=" + age +
-      ", isCool=" + isCool +
-      '}';
+    return String.format("TestDatabaseObject{id=%s, name='%s', age=%d, isCool=%b}", id, name, age, isCool);
   }
 
   @Override

@@ -19,7 +19,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class AbstractDatabase<T, D> implements Closeable {
+public abstract class AbstractDatabase<ENTRY, INTERNAL_STORAGE> implements Closeable {
 
   private final ScheduledExecutorService scheduler;
 
@@ -27,12 +27,12 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
   protected final boolean useDirtyable;
   private ScheduledFuture<?> autoSaveTask;
 
-  protected Set<T> entries;
+  protected Set<ENTRY> entries;
 
-  private final IndexedDatabaseComponent<T> indexedDatabaseComponent;
-  private final SortedDatabaseComponent<T> sortedDatabaseComponent;
+  private final IndexedDatabaseComponent<ENTRY> indexedDatabaseComponent;
+  private final SortedDatabaseComponent<ENTRY> sortedDatabaseComponent;
 
-  protected AbstractDatabase(@NotNull DatabaseInfo info, @NotNull Class<T> entryClass) {
+  protected AbstractDatabase(@NotNull DatabaseInfo info, @NotNull Class<ENTRY> entryClass) {
     this.scheduler = Executors.newSingleThreadScheduledExecutor();
     this.info = info;
     this.useDirtyable = Dirtyable.class.isAssignableFrom(entryClass);
@@ -52,45 +52,45 @@ public abstract class AbstractDatabase<T, D> implements Closeable {
     autoSaveTask = scheduler.scheduleAtFixedRate(this::save, info.getAutoSaveInterval(), info.getAutoSaveInterval(), info.getAutoSaveTimeUnit());
   }
 
-  public final void add(T entry) {
+  public final void add(ENTRY entry) {
     entries.add(entry);
     indexedDatabaseComponent.add(entry);
     sortedDatabaseComponent.add(entry);
   }
 
-  public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<T, R> function) {
+  public final <R> Optional<R> queryByIndex(@NotNull String index, @NotNull Object key, @NotNull Function<ENTRY, R> function) {
     return indexedDatabaseComponent.queryByIndex(index, key, function);
   }
 
-  public final <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<T, R> function) {
+  public final <R> Optional<R> querySorted(@NotNull String sorted, int index, @NotNull Function<ENTRY, R> function) {
     return sortedDatabaseComponent.querySorted(sorted, index, function);
   }
 
-  public final Optional<T> updateByIndex(@NotNull String index, @NotNull Object indexKey, @NotNull Consumer<T> update) {
+  public final Optional<ENTRY> updateByIndex(@NotNull String index, @NotNull Object indexKey, @NotNull Consumer<ENTRY> update) {
     return indexedDatabaseComponent.updateByIndex(index, indexKey, update);
   }
 
-  public final Optional<T> updateSorted(@NotNull String sorted, int index, @NotNull Consumer<T> update) {
+  public final Optional<ENTRY> updateSorted(@NotNull String sorted, int index, @NotNull Consumer<ENTRY> update) {
     return sortedDatabaseComponent.updateSorted(sorted, index, update);
   }
 
-  public final Set<T> getEntries() {
+  public final Set<ENTRY> getEntries() {
     return entries;
   }
 
-  public final Optional<T> getByIndex(@NotNull String index, @NotNull Object rawIndexKey) {
+  public final Optional<ENTRY> getByIndex(@NotNull String index, @NotNull Object rawIndexKey) {
     return indexedDatabaseComponent.getByIndex(index, rawIndexKey);
   }
 
-  public final Optional<T> getSorted(@NotNull String sorted, int index) {
+  public final Optional<ENTRY> getSorted(@NotNull String sorted, int index) {
     return sortedDatabaseComponent.getSorted(sorted, index);
   }
 
-  protected abstract D getData();
+  protected abstract INTERNAL_STORAGE getData();
 
   protected abstract void loadData();
 
-  protected abstract void saveData(D data);
+  protected abstract void saveData(INTERNAL_STORAGE data);
 
   protected abstract void save();
 

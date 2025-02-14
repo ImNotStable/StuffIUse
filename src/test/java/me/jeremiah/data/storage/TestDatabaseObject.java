@@ -7,8 +7,6 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 
-import static me.jeremiah.data.TestData.RANDOM;
-
 public class TestDatabaseObject implements Dirtyable, Serializable {
 
   @Serial
@@ -46,7 +44,7 @@ public class TestDatabaseObject implements Dirtyable, Serializable {
   private final boolean isCool;
 
   public TestDatabaseObject(int i) {
-    this(new UUID(RANDOM.nextLong(), RANDOM.nextLong()), "Test_Username_" + i, (byte) RANDOM.nextInt(0, 120), RANDOM.nextBoolean());
+    this(new UUID(i, i), "Test_Username_" + i, (byte) (i % 120), (i % 2) == 0);
   }
 
   public TestDatabaseObject(UUID id, String name, byte age, boolean isCool) {

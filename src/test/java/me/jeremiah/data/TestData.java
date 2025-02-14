@@ -4,13 +4,10 @@ import me.jeremiah.data.storage.CompleteTestDatabaseObject;
 import me.jeremiah.data.storage.TestDatabaseObject;
 
 import java.util.Collection;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class TestData {
-
-  public static final ThreadLocalRandom RANDOM = ThreadLocalRandom.current();
 
   public static final int ENTRY_COUNT = 10_000;
 

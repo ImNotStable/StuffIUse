@@ -363,19 +363,26 @@ public record ByteTranslatable(byte[] bytes) {
   }
 
   public static ByteTranslatable fromBigDecimal(BigDecimal value) {
-    byte[] bytes = new byte[value.toBigInteger().toByteArray().length + Integer.BYTES];
-    byte[] bigIntBytes = value.toBigInteger().toByteArray();
+    byte[] bigIntBytes = value.unscaledValue().toByteArray();
+    byte[] bytes = new byte[bigIntBytes.length + Integer.BYTES];
     System.arraycopy(bigIntBytes, 0, bytes, 0, bigIntBytes.length);
-    bytes[bigIntBytes.length] = (byte) value.scale();
+    int scale = value.scale();
+    bytes[bigIntBytes.length] = (byte) (scale >> 24);
+    bytes[bigIntBytes.length + 1] = (byte) (scale >> 16);
+    bytes[bigIntBytes.length + 2] = (byte) (scale >> 8);
+    bytes[bigIntBytes.length + 3] = (byte) scale;
     return new ByteTranslatable(bytes);
   }
 
   public BigDecimal asBigDecimal() {
-    byte[] bigIntBytes = new byte[bytes.length - Integer.BYTES];
-    System.arraycopy(bytes, 0, bigIntBytes, 0, bigIntBytes.length);
-    BigInteger bigInt = new BigInteger(bigIntBytes);
-    int scale = bytes[bigIntBytes.length];
-    return new BigDecimal(bigInt, scale);
+    int scale = 0;
+    scale |= (bytes[bytes.length - 4] & 0xFF) << 24;
+    scale |= (bytes[bytes.length - 3] & 0xFF) << 16;
+    scale |= (bytes[bytes.length - 2] & 0xFF) << 8;
+    scale |= bytes[bytes.length - 1] & 0xFF;
+    byte[] bigIntBytes = Arrays.copyOf(bytes, bytes.length - 4);
+    BigInteger unscaledValue = new BigInteger(bigIntBytes);
+    return new BigDecimal(unscaledValue, scale);
   }
 
   public static ByteTranslatable fromChar(char value) {
@@ -410,27 +417,29 @@ public record ByteTranslatable(byte[] bytes) {
 
   public static ByteTranslatable fromUUID(UUID value) {
     byte[] bytes = new byte[Long.BYTES * 2];
-    bytes[0] = (byte) (value.getMostSignificantBits() >> 56);
-    bytes[1] = (byte) (value.getMostSignificantBits() >> 48);
-    bytes[2] = (byte) (value.getMostSignificantBits() >> 40);
-    bytes[3] = (byte) (value.getMostSignificantBits() >> 32);
-    bytes[4] = (byte) (value.getMostSignificantBits() >> 24);
-    bytes[5] = (byte) (value.getMostSignificantBits() >> 16);
-    bytes[6] = (byte) (value.getMostSignificantBits() >> 8);
-    bytes[7] = (byte) value.getMostSignificantBits();
-    bytes[8] = (byte) (value.getLeastSignificantBits() >> 56);
-    bytes[9] = (byte) (value.getLeastSignificantBits() >> 48);
-    bytes[10] = (byte) (value.getLeastSignificantBits() >> 40);
-    bytes[11] = (byte) (value.getLeastSignificantBits() >> 32);
-    bytes[12] = (byte) (value.getLeastSignificantBits() >> 24);
-    bytes[13] = (byte) (value.getLeastSignificantBits() >> 16);
-    bytes[14] = (byte) (value.getLeastSignificantBits() >> 8);
-    bytes[15] = (byte) value.getLeastSignificantBits();
+    long mostSigBits = value.getMostSignificantBits();
+    bytes[0] = (byte) (mostSigBits >> 56);
+    bytes[1] = (byte) (mostSigBits >> 48);
+    bytes[2] = (byte) (mostSigBits >> 40);
+    bytes[3] = (byte) (mostSigBits >> 32);
+    bytes[4] = (byte) (mostSigBits >> 24);
+    bytes[5] = (byte) (mostSigBits >> 16);
+    bytes[6] = (byte) (mostSigBits >> 8);
+    bytes[7] = (byte) mostSigBits;
+    long leastSigBits = value.getLeastSignificantBits();
+    bytes[8] = (byte) (leastSigBits >> 56);
+    bytes[9] = (byte) (leastSigBits >> 48);
+    bytes[10] = (byte) (leastSigBits >> 40);
+    bytes[11] = (byte) (leastSigBits >> 32);
+    bytes[12] = (byte) (leastSigBits >> 24);
+    bytes[13] = (byte) (leastSigBits >> 16);
+    bytes[14] = (byte) (leastSigBits >> 8);
+    bytes[15] = (byte) leastSigBits;
     return new ByteTranslatable(bytes);
   }
 
   public UUID asUUID() {
-    long mostSigBits = 0, leastSigBits = 0;
+    long mostSigBits = 0;
     mostSigBits |= (long) (bytes[0] & 0xFF) << 56;
     mostSigBits |= (long) (bytes[1] & 0xFF) << 48;
     mostSigBits |= (long) (bytes[2] & 0xFF) << 40;
@@ -439,6 +448,7 @@ public record ByteTranslatable(byte[] bytes) {
     mostSigBits |= (long) (bytes[5] & 0xFF) << 16;
     mostSigBits |= (long) (bytes[6] & 0xFF) << 8;
     mostSigBits |= bytes[7] & 0xFF;
+    long leastSigBits = 0;
     leastSigBits |= (long) (bytes[8] & 0xFF) << 56;
     leastSigBits |= (long) (bytes[9] & 0xFF) << 48;
     leastSigBits |= (long) (bytes[10] & 0xFF) << 40;

@@ -92,7 +92,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testBigInteger() {
-    final BigInteger originalValue = BigInteger.valueOf(1L);
+    final BigInteger originalValue = new BigInteger("123456789123456789123456789123456789");
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromBigInteger(originalValue);
     final BigInteger value = byteTranslatable.asBigInteger();
     assert originalValue.equals(value);
@@ -100,7 +100,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testFloat() {
-    final float originalValue = 1;
+    final float originalValue = 1.23F;
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromFloat(originalValue);
     final float value = byteTranslatable.asFloat();
     assert originalValue == value;
@@ -108,7 +108,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testFloatArray() {
-    final float[] originalValue = new float[] {1, 2, 3};
+    final float[] originalValue = new float[] {1.23F, 2.34F, 3.45F};
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromFloatArray(originalValue);
     final float[] value = byteTranslatable.asFloatArray();
     assert Arrays.equals(originalValue, value);
@@ -116,7 +116,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testDouble() {
-    final double originalValue = 1;
+    final double originalValue = 1.23;
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromDouble(originalValue);
     final double value = byteTranslatable.asDouble();
     assert originalValue == value;
@@ -124,7 +124,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testDoubleArray() {
-    final double[] originalValue = new double[] {1, 2, 3};
+    final double[] originalValue = new double[] {1.23, 2.34, 3.45};
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromDoubleArray(originalValue);
     final double[] value = byteTranslatable.asDoubleArray();
     assert Arrays.equals(originalValue, value);
@@ -132,7 +132,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testBigDecimal() {
-    final BigDecimal originalValue = BigDecimal.valueOf(1);
+    final BigDecimal originalValue = new BigDecimal("123456789123456789123456789123456789.1234567891234567899123456789123456789");
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromBigDecimal(originalValue);
     final BigDecimal value = byteTranslatable.asBigDecimal();
     assert originalValue.equals(value);
@@ -164,7 +164,7 @@ public class TestByteTranslatable {
 
   @Test
   public void testUUID() {
-    final UUID originalValue = UUID.randomUUID();
+    final UUID originalValue = new UUID(Long.MAX_VALUE, Long.MIN_VALUE);
     final ByteTranslatable byteTranslatable = ByteTranslatable.fromUUID(originalValue);
     final UUID value = byteTranslatable.asUUID();
     assert originalValue.equals(value);
