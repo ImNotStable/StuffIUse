@@ -25,7 +25,7 @@ dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
 
     // me.jeremiah.minecraft.hooks dependencies
-    compileOnly 'me.clip:placeholderapi:2.11.6'
+    compileOnly 'me.clip:placeholderapi:2.11.7'
 
     // me.jeremiah.data.storage.databases dependencies
     compileOnly 'com.zaxxer:HikariCP:6.2.1'
