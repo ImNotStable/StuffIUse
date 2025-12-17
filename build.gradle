@@ -28,13 +28,15 @@ dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.7'
 
     // me.jeremiah.data.storage.databases dependencies
+
     compileOnly 'com.zaxxer:HikariCP:7.0.2'
     compileOnly 'org.xerial:sqlite-jdbc:3.51.1.0'
     compileOnly 'com.h2database:h2:2.4.240'
     compileOnly 'com.mysql:mysql-connector-j:9.5.0'
-    compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
+    compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
     compileOnly 'org.postgresql:postgresql:42.7.8'
     compileOnly 'org.mongodb:mongodb-driver-sync:5.6.2'
+
     // me.jeremiah.data.ByteTranslatable dependencies
     implementation 'com.esotericsoftware:kryo:5.6.2'
 
@@ -51,7 +53,7 @@ dependencies {
     testRuntimeOnly 'com.zaxxer:HikariCP:7.0.2'
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.51.1.0'
     testRuntimeOnly 'com.h2database:h2:2.4.240'
-    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
+    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.7'
     testRuntimeOnly 'org.postgresql:postgresql:42.7.8'
     testRuntimeOnly 'org.mongodb:mongodb-driver-sync:5.6.2'
 }
