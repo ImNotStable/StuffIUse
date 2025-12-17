@@ -18,8 +18,8 @@ repositories {
 dependencies {
     implementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
 
-    implementation 'org.jetbrains:annotations:26.0.2'
-    annotationProcessor 'org.jetbrains:annotations:26.0.2'
+    implementation 'org.jetbrains:annotations:26.0.2-1'
+    annotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
     // me.jeremiah.minecraft dependencies
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
@@ -44,8 +44,8 @@ dependencies {
 
     testImplementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
 
-    testImplementation 'org.jetbrains:annotations:26.0.2'
-    testAnnotationProcessor 'org.jetbrains:annotations:26.0.2'
+    testImplementation 'org.jetbrains:annotations:26.0.2-1'
+    testAnnotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
     testImplementation 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
 
