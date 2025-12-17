@@ -18,8 +18,8 @@ repositories {
 dependencies {
     implementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
 
-    implementation 'org.jetbrains:annotations:26.0.2'
-    annotationProcessor 'org.jetbrains:annotations:26.0.2'
+    implementation 'org.jetbrains:annotations:26.0.2-1'
+    annotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
     // me.jeremiah.minecraft dependencies
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
@@ -28,33 +28,32 @@ dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.7'
 
     // me.jeremiah.data.storage.databases dependencies
-    compileOnly 'com.zaxxer:HikariCP:6.2.1'
+    compileOnly 'com.zaxxer:HikariCP:7.0.2'
     compileOnly 'org.xerial:sqlite-jdbc:3.49.0.0'
-    compileOnly 'com.h2database:h2:2.3.232'
+    compileOnly 'com.h2database:h2:2.4.240'
     compileOnly 'com.mysql:mysql-connector-j:9.5.0'
     compileOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
-    compileOnly 'org.postgresql:postgresql:42.7.5'
-    compileOnly 'org.mongodb:mongodb-driver-sync:5.3.1'
-
+    compileOnly 'org.postgresql:postgresql:42.7.8'
+    compileOnly 'org.mongodb:mongodb-driver-sync:5.6.2'
     // me.jeremiah.data.ByteTranslatable dependencies
     implementation 'com.esotericsoftware:kryo:5.6.2'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     testImplementation 'org.slf4j:slf4j-api:2.1.0-alpha1'
 
-    testImplementation 'org.jetbrains:annotations:26.0.2'
-    testAnnotationProcessor 'org.jetbrains:annotations:26.0.2'
+    testImplementation 'org.jetbrains:annotations:26.0.2-1'
+    testAnnotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
     testImplementation 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
 
-    testRuntimeOnly 'com.zaxxer:HikariCP:6.2.1'
+    testRuntimeOnly 'com.zaxxer:HikariCP:7.0.2'
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.49.0.0'
-    testRuntimeOnly 'com.h2database:h2:2.3.232'
+    testRuntimeOnly 'com.h2database:h2:2.4.240'
     testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
-    testRuntimeOnly 'org.postgresql:postgresql:42.7.5'
-    testRuntimeOnly 'org.mongodb:mongodb-driver-sync:5.3.1'
+    testRuntimeOnly 'org.postgresql:postgresql:42.7.8'
+    testRuntimeOnly 'org.mongodb:mongodb-driver-sync:5.6.2'
 }
 
 test {
