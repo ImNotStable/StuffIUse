@@ -28,7 +28,7 @@ dependencies {
     compileOnly 'me.clip:placeholderapi:2.11.7'
 
     // me.jeremiah.data.storage.databases dependencies
-    compileOnly 'com.zaxxer:HikariCP:6.2.1'
+    compileOnly 'com.zaxxer:HikariCP:7.0.2'
     compileOnly 'org.xerial:sqlite-jdbc:3.49.0.0'
     compileOnly 'com.h2database:h2:2.3.232'
     compileOnly 'com.mysql:mysql-connector-j:9.2.0'
@@ -49,7 +49,7 @@ dependencies {
 
     testImplementation 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
 
-    testRuntimeOnly 'com.zaxxer:HikariCP:6.2.1'
+    testRuntimeOnly 'com.zaxxer:HikariCP:7.0.2'
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.49.0.0'
     testRuntimeOnly 'com.h2database:h2:2.3.232'
     testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.1'
