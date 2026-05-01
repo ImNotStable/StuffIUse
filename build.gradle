@@ -22,7 +22,7 @@ dependencies {
     annotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
     // me.jeremiah.minecraft dependencies
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:26.1.2.build.53-stable'
 
     // me.jeremiah.minecraft.hooks dependencies
     compileOnly 'me.clip:placeholderapi:2.11.7'
@@ -48,7 +48,7 @@ dependencies {
     testImplementation 'org.jetbrains:annotations:26.0.2-1'
     testAnnotationProcessor 'org.jetbrains:annotations:26.0.2-1'
 
-    testImplementation 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    testImplementation 'io.papermc.paper:paper-api:26.1.2.build.53-stable'
 
     testRuntimeOnly 'com.zaxxer:HikariCP:7.0.2'
     testRuntimeOnly 'org.xerial:sqlite-jdbc:3.51.1.0'
